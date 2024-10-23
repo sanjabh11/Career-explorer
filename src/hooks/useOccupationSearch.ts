@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { searchOccupations, getOccupationDetails } from '../services/OnetService';
 import { Occupation, OccupationDetails } from '@/types/onet';
+import { assignGenAIImpact } from '@/utils/apoCalculations';
 
 export const useOccupationSearch = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -38,7 +39,15 @@ export const useOccupationSearch = () => {
     setError(null);
     try {
       const details = await getOccupationDetails(occupation.code);
-      setSelectedOccupation(details);
+      const updatedOccupation = {
+        ...details,
+        tasks: details.tasks.map(assignGenAIImpact),
+        knowledge: details.knowledge.map(assignGenAIImpact),
+        skills: details.skills.map(assignGenAIImpact),
+        abilities: details.abilities.map(assignGenAIImpact),
+        technologies: details.technologies.map(assignGenAIImpact),
+      };
+      setSelectedOccupation(updatedOccupation);
     } catch (error) {
       console.error('Error fetching occupation details:', error);
       setError('Failed to fetch occupation details. Please try again.');

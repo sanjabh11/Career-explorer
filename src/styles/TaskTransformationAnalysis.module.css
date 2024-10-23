@@ -1,0 +1,32 @@
+.taskTransformationAnalysis {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.taskList {
+  list-style-type: none;
+  padding: 0;
+}
+
+.taskItem {
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border-radius: 3px;
+  border: 1px solid #e0e0e0;
+}
+
+.impact {
+  font-weight: bold;
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.impactLow { background-color: #e6f4ea; color: #1e8e3e; }
+.impactMedium { background-color: #fef7e0; color: #f9ab00; }
+.impactHigh { background-color: #fce8e6; color: #d93025; }
