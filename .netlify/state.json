@@ -13,8 +13,9 @@
 			},
 			"timezone": "Asia/Kolkata",
 			"latitude": 30.7339,
-			"longitude": 76.7889
+			"longitude": 76.7889,
+			"postalCode": "140603"
 		},
-		"timestamp": 1726587061201
+		"timestamp": 1729574556836
 	}
 }

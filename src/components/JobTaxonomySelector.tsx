@@ -13,15 +13,11 @@ import APOChart from './APOChart';
 import { Occupation, OccupationDetails } from '@/types/onet';
 import { useOccupationSearch } from '../hooks/useOccupationSearch';
 import { useDebounce } from '../hooks/useDebounce';
-import { calculateAPO, getAverageAPO } from '../utils/apoCalculations';
+import { calculateAPO, getAverageAPO, calculateOverallAPO } from '../utils/apoCalculations';
 import { X, Search, Briefcase, Book, Brain, BarChart2, Cpu, Upload, Download } from 'lucide-react';
 import TopCareers from './TopCareers';
 import styles from '@/styles/JobTaxonomySelector.module.css';
-
-const calculateOverallAPO = (categoryAPOs: { apo: number }[]) => {
-  const totalAPO = categoryAPOs.reduce((sum, category) => sum + category.apo, 0);
-  return (totalAPO / categoryAPOs.length).toFixed(2);
-};
+import APOBreakdown from './APOBreakdown';
 
 const JobTaxonomySelector: React.FC = () => {
   const {
@@ -43,15 +39,10 @@ const JobTaxonomySelector: React.FC = () => {
     }
   }, [debouncedSearchTerm, handleSearch]);
 
-  const calculateOverallAPO = (categoryAPOs: { apo: number }[]) => {
-    const totalAPO = categoryAPOs.reduce((sum, category) => sum + category.apo, 0);
-    return (totalAPO / categoryAPOs.length).toFixed(2);
-  };
-
   const renderAccordionContent = useCallback((title: string, items: any[], category: string) => {
     const averageAPO = getAverageAPO(items, category);
     return (
-      <div className="space-y-2">
+      <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold">{title}</h3>
           <div className="flex items-center">
@@ -60,6 +51,7 @@ const JobTaxonomySelector: React.FC = () => {
             <span className="ml-2">{averageAPO.toFixed(2)}%</span>
           </div>
         </div>
+        <APOBreakdown items={items} category={category} />
         <ul className="space-y-2">
           {items.map((item, index) => (
             <li key={index} className="bg-gray-100 p-3 rounded-md">
@@ -69,6 +61,11 @@ const JobTaxonomySelector: React.FC = () => {
                 <span className="mr-2">APO:</span>
                 <Progress value={calculateAPO(item, category)} className="w-24" />
                 <span className="ml-2">{calculateAPO(item, category).toFixed(2)}%</span>
+                {item.genAIImpact && (
+                  <span className="ml-2 text-sm font-semibold">
+                    GenAI Impact: {item.genAIImpact}
+                  </span>
+                )}
               </div>
             </li>
           ))}
@@ -143,7 +140,7 @@ const JobTaxonomySelector: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title} style={{ color: '#00008B' }}>GenAI Skill-Set Exposure Tool</h1>
+      <h1 className={styles.title}>GenAI Skill-Set Exposure Tool</h1>
       <p className={styles.subtitle}>Data sourced from <a href="https://www.onetcenter.org/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">O*NET Resource Center</a></p>
       
       <div className={styles.searchContainer}>
@@ -177,11 +174,23 @@ const JobTaxonomySelector: React.FC = () => {
                   <span className="font-bold text-lg">Overall APO:</span>
                   <div className="flex items-center">
                     <Progress 
-                      value={parseFloat(calculateOverallAPO(renderAutomationAnalysis(selectedOccupation).props.children[1].props.children.props.data))} 
+                      value={calculateOverallAPO({
+                        tasks: selectedOccupation.tasks,
+                        knowledge: selectedOccupation.knowledge,
+                        skills: selectedOccupation.skills,
+                        abilities: selectedOccupation.abilities,
+                        technologies: selectedOccupation.technologies
+                      })} 
                       className={`w-32 mr-2 ${styles.apoProgress}`} 
                     />
                     <span className="text-2xl font-bold">
-                      {calculateOverallAPO(renderAutomationAnalysis(selectedOccupation).props.children[1].props.children.props.data)}%
+                      {calculateOverallAPO({
+                        tasks: selectedOccupation.tasks,
+                        knowledge: selectedOccupation.knowledge,
+                        skills: selectedOccupation.skills,
+                        abilities: selectedOccupation.abilities,
+                        technologies: selectedOccupation.technologies
+                      }).toFixed(2)}%
                     </span>
                   </div>
                 </div>

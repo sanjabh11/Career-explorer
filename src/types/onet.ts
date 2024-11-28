@@ -12,10 +12,14 @@ export interface APOItem {
   name: string;
   title?: string;
   description: string;
+  importance?: number;
+  level?: number;
   value: number;
   scale?: string;
   commodityCode?: string;
   hotTechnology?: boolean;
+  date?: string;
+  genAIImpact?: 'Low' | 'Medium' | 'High';
 }
 
 export interface Occupation {
@@ -47,4 +51,39 @@ export interface TopCareer {
   title: string;
   apo: number;
   code: string;
+}
+
+// Add the missing type definitions
+export interface DWA {
+  id: string;
+  description: string;
+  // Add any other properties that might be relevant
+}
+
+export interface JobZoneEducation {
+  jobZone: string | number;
+  description: string;
+  education: string;
+  experience: string;
+  training: string;
+  // Add any other properties that might be relevant
+}
+
+export interface RelatedOccupation {
+  title: string;
+  similarity: number;
+  // Add any other properties that might be relevant
+}
+
+export interface WagesEmploymentTrends {
+  median: number;
+  employment: number;
+  growthRate: number;
+  projectedOpenings: number;
+}
+
+export interface WorkContext {
+  category: string;
+  description: string;
+  value: number | string; // Depending on how the value is represented, it could be a number or string
 }
