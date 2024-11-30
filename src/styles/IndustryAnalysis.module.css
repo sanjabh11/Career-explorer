@@ -19,11 +19,15 @@
 }
 
 .label {
-  @apply text-sm font-medium flex justify-between items-center;
+  @apply text-sm font-medium flex-1;
+}
+
+.labelWithTooltip {
+  @apply flex items-center gap-2;
 }
 
 .valueDisplay {
-  @apply text-sm font-semibold text-primary;
+  @apply text-sm font-semibold text-primary ml-auto;
 }
 
 .cardContent {
@@ -44,4 +48,20 @@
 
 .scoreValue {
   @apply text-lg font-bold text-primary;
+}
+
+.container {
+  @apply w-full max-w-2xl mx-auto;
+}
+
+.tooltip {
+  @apply relative;
+}
+
+.tooltip .tooltip-content {
+  @apply hidden absolute bg-gray-200 text-gray-600 text-sm p-2 rounded-lg;
+}
+
+.tooltip:hover .tooltip-content {
+  @apply block;
 }

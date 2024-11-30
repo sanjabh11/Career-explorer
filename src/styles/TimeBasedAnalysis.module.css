@@ -1,0 +1,83 @@
+.container {
+  @apply w-full max-w-2xl mx-auto;
+}
+
+.cardContent {
+  @apply space-y-6;
+}
+
+.formControl {
+  @apply space-y-2;
+}
+
+.label {
+  @apply text-sm font-medium flex-1;
+}
+
+.labelWithTooltip {
+  @apply flex items-center gap-2;
+}
+
+.techSection {
+  @apply space-y-4 mt-6;
+}
+
+.sectionHeader {
+  @apply flex items-center gap-2;
+}
+
+.sectionTitle {
+  @apply text-lg font-semibold;
+}
+
+.techList {
+  @apply space-y-4;
+}
+
+.techItem {
+  @apply p-4 bg-gray-50 rounded-lg;
+}
+
+.techLabel {
+  @apply flex items-center gap-3;
+}
+
+.techCheckbox {
+  @apply h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary;
+}
+
+.techName {
+  @apply font-medium;
+}
+
+.techMaturity {
+  @apply text-sm text-gray-500;
+}
+
+.techDescription {
+  @apply mt-2 text-sm text-gray-600;
+}
+
+.scoreSection {
+  @apply mt-6 pt-6 border-t;
+}
+
+.scoreRow {
+  @apply flex justify-between items-center mb-2;
+}
+
+.scoreLabel {
+  @apply font-medium;
+}
+
+.scoreValue {
+  @apply text-lg font-semibold text-primary;
+}
+
+.finalScore {
+  @apply flex justify-between items-center mt-6 mb-2;
+}
+
+.finalScoreValue {
+  @apply text-xl font-bold text-primary;
+}

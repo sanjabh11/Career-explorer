@@ -22,6 +22,7 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
       weight: 0.8,
       category: determineCategory(occupation),
       complexity: calculateComplexity(occupation),
+      repetitiveness: calculateRepetitiveness(occupation),
       humanAICollaboration: calculateHumanAICollaboration(occupation),
       industrySpecific: isIndustrySpecific(occupation),
       emergingTechImpact: calculateEmergingTechImpact(occupation)
@@ -39,7 +40,38 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
 
   const calculateComplexity = (occupation: any): number => {
     const skills = occupation.skills || [];
-    return Math.min(5, Math.ceil((skills.length || 1) / 2));
+    const avgSkillLevel = skills.reduce((acc: number, skill: any) => 
+      acc + (skill.level || 0), 0) / (skills.length || 1);
+    return Math.max(1, Math.min(5, Math.round(avgSkillLevel)));
+  };
+
+  const calculateRepetitiveness = (occupation: any): number => {
+    const tasks = occupation.tasks || [];
+    const routineTasks = tasks.filter((task: any) => {
+      const description = (task.description || '').toLowerCase();
+      return description.includes('routine') || 
+             description.includes('repetitive') ||
+             description.includes('regular') ||
+             description.includes('standard') ||
+             description.includes('daily');
+    });
+
+    const standardizationScore = routineTasks.length / (tasks.length || 1);
+    
+    const skills = occupation.skills || [];
+    const uniqueSkillCategories = new Set(skills.map((skill: any) => skill.category));
+    const skillVarietyScore = 1 - (uniqueSkillCategories.size / 10); 
+
+    const activities = occupation.workActivities || [];
+    const activityVarietyScore = 1 - (activities.length / 20); 
+
+    const repetitiveness = (
+      standardizationScore * 0.5 +
+      skillVarietyScore * 0.3 +
+      activityVarietyScore * 0.2
+    );
+
+    return Math.max(0, Math.min(1, repetitiveness));
   };
 
   const calculateHumanAICollaboration = (occupation: any): number => {

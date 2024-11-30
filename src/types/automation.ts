@@ -4,6 +4,7 @@ export interface AutomationFactor {
   weight: number;
   category: string;
   complexity: number;  // 1-5 scale
+  repetitiveness: number; // 0-1 scale
   humanAICollaboration: number;  // 0-1 scale
   industrySpecific: boolean;
   emergingTechImpact: number;  // 0-1 scale
