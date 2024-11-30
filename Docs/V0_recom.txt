@@ -1,0 +1,639 @@
+= () => {
+  return (
+    <div>
+      <EnhancedDashboard />
+    </div>
+  );
+};
+
+export default Home;
+
+// ===== src/components/EnhancedDashboard.tsx =====
+
+import React, { useState, useEffect } from 'react';
+import { Search, ChevronDown, ChevronUp, BarChart2, Book, Briefcase, Brain, Cpu, Download, Upload, Info } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import styles from '@/styles/EnhancedDashboard.module.css';
+import { OccupationData, CategoryData, TopCareer } from '@/types/dashboard';
+import { getColorForAPO } from '@/utils/dataProcessing';
+import Image from 'next/image';
+
+const CategoryAccordion = ({ category, icon, apo, details }: CategoryData) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className={styles.categoryAccordion}>
+      <button
+        className={styles.accordionButton}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div className="flex items-center">
+          {icon}
+          <span className="ml-2 font-medium">{category}</span>
+        </div>
+        <div className="flex items-center">
+          <Progress value={apo} className={`w-24 mr-2 ${getColorForAPO(apo)}`} />
+          <span className="mr-2 text-sm font-semibold">{apo}% APO</span>
+          {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </div>
+      </button>
+      {isOpen && (
+        <ScrollArea className={styles.accordionContent}>
+          {details.map((item, index) => (
+            <div key={index} className="mb-4">
+              <p className="font-medium">{item.name}</p>
+              <p className="text-sm text-gray-600">{item.description}</p>
+              <div className="flex items-center mt-1">
+                <Progress value={item.value} className={`w-24 mr-2 ${getColorForAPO(item.value)}`} />
+                <span className="text-xs">Value: {item.value}</span>
+              </div>
+            </div>
+          ))}
+        </ScrollArea>
+      )}
+    </div>
+  );
+};
+
+const EnhancedDashboard = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [occupationData, setOccupationData] = useState<OccupationData | null>(null);
+  const [selectedOccupation, setSelectedOccupation] = useState<string | null>(null);
+  const [chartType, setChartType] = useState('bar');
+
+  useEffect(() => {
+    const fetchOccupationData = async () => {
+      const response = await fetch('/api/occupation');
+      const data = await response.json();
+      setOccupationData(data);
+    };
+
+    fetchOccupationData();
+  }, []);
+
+  const topCareers: TopCareer[] = [
+    { title: "Software Developer", apo: 65 },
+    { title: "Data Scientist", apo: 72 },
+    { title: "UX Designer", apo: 58 },
+    { title: "Network Administrator", apo: 61 },
+    { title: "Cybersecurity Analyst", apo: 70 },
+  ];
+
+  return (
+    <div className={styles.dashboardContainer}>
+      <h1 className={styles.dashboardTitle}>Analysis of Skill set exposure due to GenAI</h1>
+      <p className={styles.dashboardSubtitle}>Data sourced from <a href="https://www.onetcenter.org/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">O*NET Resource Center</a></p>
+      
+      <div className={styles.searchContainer}>
+        <Input
+          type="text"
+          placeholder="Search for occupations or skills"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="flex-grow"
+        />
+        <Button>
+          <Search className="mr-2 h-4 w-4" /> Search
+        </Button>
+      </div>
+
+      <div className={styles.mainContent}>
+        <div className={styles.occupationDetails}>
+          {occupationData && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex justify-between items-center">
+                  <span>{occupationData.title}</span>
+                  <span className="text-sm font-normal text-gray-500">O*NET-SOC Code: {occupationData.code}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-4 text-gray-600">{occupationData.description}</p>
+                <div className="flex justify-between items-center mb-4">
+                  <span className="font-bold text-lg">Overall APO:</span>
+                  <div className="flex items-center">
+                    <Progress value={occupationData.overallAPO} className={`w-32 mr-2 ${getColorForAPO(occupationData.overallAPO)}`} />
+                    <span className="text-2xl font-bold">{occupationData.overallAPO}%</span>
+                  </div>
+                </div>
+                <Tabs defaultValue="categories" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="categories" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Categories</TabsTrigger>
+                    <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Detailed View</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="categories">
+                    <div className="w-full">
+                      {occupationData.categories.map((category, index) => (
+                        <CategoryAccordion
+                          key={index}
+                          category={category.name}
+                          icon={category.icon}
+                          apo={category.apo}
+                          details={category.details}
+                        />
+                      ))}
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="details">
+                    <ScrollArea className={styles.detailedView}>
+                      {occupationData.categories.map((category, index) => (
+                        <div key={index} className="mb-4">
+                          <h3 className="text-lg font-semibold mb-2">{category.name}</h3>
+                          {category.details.map((item, itemIndex) => (
+                            <div key={itemIndex} className="mb-2">
+                              <p className="font-medium">{item.name}</p>
+                              <p className="text-sm text-gray-600">{item.description}</p>
+                              <div className="flex items-center mt-1">
+                                <Progress value={item.value} className={`w-24 mr-2 ${getColorForAPO(item.value)}`} />
+                                <span className="text-xs">Value: {item.value}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </ScrollArea>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        <div className={styles.sidebarContent}>
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Careers</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2">
+                {topCareers.map((career, index) => (
+                  <li key={index} className="flex justify-between items-center">
+                    <span>{career.title}</span>
+                    <div className="flex items-center">
+                      <Progress value={career.apo} className={`w-24 mr-2 ${getColorForAPO(career.apo)}`} />
+                      <span className="text-sm font-semibold mr-2">{career.apo}% APO</span>
+                      <Button variant="outline" size="sm" onClick={() => setSelectedOccupation(career.title)}>
+                        <Info className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex justify-between items-center">
+                <span>Automation Potential Overview</span>
+                <Select value={chartType} onValueChange={setChartType}>
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Chart Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bar">Bar Chart</SelectItem>
+                    <SelectItem value="pie">Pie Chart</SelectItem>
+                  </SelectContent>
+                </Select>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={styles.chartContainer}>
+                <Image src="/placeholder-chart.svg" alt="Placeholder Chart" width={300} height={200} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Custom APO Data</CardTitle>
+            </CardHeader>
+            <CardContent className="flex justify-between">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button>
+                      <Upload className="mr-2 h-4 w-4" /> Upload Data
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Upload your custom APO data</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline">
+                      <Download className="mr-2 h-4 w-4" /> Download Template
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Download a template for custom APO data</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+      <footer className={styles.footer}>
+        © Conceptualised & presented by Ignite IT consulting
+      </footer>
+    </div>
+  );
+};
+
+export default EnhancedDashboard;
+
+// ===== src/utils/dataProcessing.ts =====
+
+import { OccupationData, CategoryData, DetailData } from '@/types/dashboard';
+
+export const processOccupationData = (rawData: any): OccupationData => {
+  // This is a placeholder function. In a real-world scenario, you would process the raw data from your API or database here.
+  return {
+    title: rawData.title || '',
+    description: rawData.description || '',
+    code: rawData.code || '',
+    overallAPO: rawData.overallAPO || 0,
+    categories: rawData.categories.map((category: any): CategoryData => ({
+      name: category.name || '',
+      icon: category.icon || null,
+      apo: category.apo || 0,
+      details: category.details.map((detail: any): DetailData => ({
+        name: detail.name || '',
+        description: detail.description || '',
+        value: detail.value || 0,
+      })),
+    })),
+  };
+};
+
+export const calculateOverallAPO = (categories: CategoryData[]): number => {
+  const totalAPO = categories.reduce((sum, category) => sum + category.apo, 0);
+  return totalAPO / categories.length;
+};
+
+export const getColorForAPO = (apo: number): string => {
+  if (apo < 33) return 'bg-green-500';
+  if (apo < 66) return 'bg-yellow-500';
+  return 'bg-red-500';
+};
+
+export const sortOccupationsByAPO = (occupations: OccupationData[]): OccupationData[] => {
+  return [...occupations].sort((a, b) => b.overallAPO - a.overallAPO);
+};
+
+export const filterOccupations = (occupations: OccupationData[], searchTerm: string): OccupationData[] => {
+  const lowercasedSearchTerm = searchTerm.toLowerCase();
+  return occupations.filter(
+    (occupation) =>
+      occupation.title.toLowerCase().includes(lowercasedSearchTerm) ||
+      occupation.description.toLowerCase().includes(lowercasedSearchTerm) ||
+      occupation.categories.some((category) =>
+        category.name.toLowerCase().includes(lowercasedSearchTerm) ||
+        category.details.some((detail) =>
+          detail.name.toLowerCase().includes(lowercasedSearchTerm) ||
+          detail.description.toLowerCase().includes(lowercasedSearchTerm)
+        )
+      )
+  );
+};
+
+// ===== tailwind.config.js =====
+
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  darkMode: ["class"],
+  content: [
+    './pages/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+    './app/**/*.{ts,tsx}',
+    './src/**/*.{ts,tsx}',
+	],
+  theme: {
+    container: {
+      center: true,
+      padding: "2rem",
+      screens: {
+        "2xl": "1400px",
+      },
+    },
+    extend: {
+      colors: {
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        destruct
+ive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+      keyframes: {
+        "accordion-down": {
+          from: { height: 0 },
+          to: { height: "var(--radix-accordion-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: 0 },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+      },
+    },
+  },
+  plugins: [require("tailwindcss-animate")],
+}
+
+// ===== src/types/dashboard.ts =====
+
+import { ReactNode } from 'react';
+
+export interface DetailData {
+  name: string;
+  description: string;
+  value: number;
+}
+
+export interface CategoryData {
+  name: string;
+  icon: ReactNode;
+  apo: number;
+  details: DetailData[];
+}
+
+export interface OccupationData {
+  title: string;
+  description: string;
+  code: string;
+  overallAPO: number;
+  categories: CategoryData[];
+}
+
+export interface TopCareer {
+  title: string;
+  apo: number;
+}
+
+// ===== src/pages/api/occupation.ts =====
+
+import { NextApiRequest, NextApiResponse } from 'next'
+import { OccupationData } from '@/types/dashboard'
+import { processOccupationData } from '@/utils/dataProcessing'
+
+// This is mock data. In a real application, you would fetch this from a database or external API.
+const mockOccupationData = {
+  title: "Energy Auditors",
+  description: "Conduct energy audits of buildings, building systems, or process systems. May also conduct investment grade audits of buildings or systems.",
+  code: "47-4011.01",
+  overallAPO: 49.51,
+  categories: [
+    { 
+      name: "Tasks", 
+      icon: "Briefcase", 
+      apo: 46.79,
+      details: [
+        { name: "Identify and prioritize energy-saving measures", description: "Analyze and rank potential energy-saving initiatives", value: 46.79 },
+        { name: "Prepare audit reports", description: "Create comprehensive reports detailing energy analysis results and recommendations", value: 46.79 },
+        { name: "Identify health or safety issues", description: "Recognize potential hazards related to weatherization projects", value: 46.79 },
+      ]
+    },
+    { 
+      name: "Knowledge", 
+      icon: "Book", 
+      apo: 50.63,
+      details: [
+        { name: "Customer and Personal Service", description: "Understanding customer needs and ensuring satisfaction", value: 79 },
+        { name: "Building and Construction", description: "Knowledge of materials and methods in construction", value: 75 },
+        { name: "Mathematics", description: "Application of arithmetic, algebra, geometry, and statistics", value: 75 },
+      ]
+    },
+    { 
+      name: "Skills", 
+      icon: "Brain", 
+      apo: 46.14,
+      details: [
+        { name: "Reading Comprehension", description: "Understanding written information in work documents", value: 72 },
+        { name: "Speaking", description: "Conveying information effectively through speech", value: 72 },
+        { name: "Active Listening", description: "Giving full attention to speakers, asking questions as appropriate", value: 69 },
+      ]
+    },
+    { 
+      name: "Abilities", 
+      icon: "BarChart2", 
+      apo: 48.33,
+      details: [
+        { name: "Oral Comprehension", description: "The ability to listen and understand information and ideas presented through spoken words and sentences", value: 75 },
+        { name: "Oral Expression", description: "The ability to communicate information and ideas in speaking so others will understand", value: 75 },
+        { name: "Written Comprehension", description: "The ability to read and understand information and ideas presented in writing", value: 75 },
+      ]
+    },
+    { 
+      name: "Technologies", 
+      icon: "Cpu", 
+      apo: 55.65,
+      details: [
+        { name: "Ekotrope RATER", description: "Analytical or scientific software", value: 57.5 },
+        { name: "IBM SPSS Statistics", description: "Analytical or scientific software", value: 57.5 },
+        { name: "SAS", description: "Analytical or scientific software", value: 57.5 },
+      ]
+    }
+  ]
+}
+
+export default function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<OccupationData>
+) {
+  if (req.method === 'GET') {
+    // Process the mock data
+    const processedData = processOccupationData(mockOccupationData)
+    res.status(200).json(processedData)
+  } else {
+    res.setHeader('Allow', ['GET'])
+    res.status(405).end(`Method ${req.method} Not Allowed`)
+  }
+}
+
+// ===== public/placeholder-chart.svg =====
+
+<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#f0f0f0"/>
+  <text x="150" y="100" font-family="Arial" font-size="16" text-anchor="middle">Placeholder Chart</text>
+</svg>
+
+// ===== src/styles/globals.css =====
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+ 
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+ 
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+ 
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+ 
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+ 
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+ 
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+ 
+    --radius: 0.5rem;
+  }
+ 
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+ 
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+ 
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+ 
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+ 
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+ 
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+ 
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+// ===== src/styles/EnhancedDashboard.module.css =====
+
+.dashboardContainer {
+  @apply container mx-auto p-4 bg-gray-50 min-h-screen;
+}
+
+.dashboardTitle {
+  @apply text-4xl font-bold mb-2 text-center text-gray-800;
+}
+
+.dashboardSubtitle {
+  @apply text-center text-gray-600 mb-6;
+}
+
+.searchContainer {
+  @apply mb-6 flex space-x-2;
+}
+
+.mainContent {
+  @apply grid grid-cols-1 lg:grid-cols-3 gap-6;
+}
+
+.occupationDetails {
+  @apply lg:col-span-2;
+}
+
+.sidebarContent {
+  @apply space-y-6;
+}
+
+.categoryAccordion {
+  @apply border-b border-gray-200 py-2;
+}
+
+.accordionButton {
+  @apply flex justify-between items-center w-full hover:bg-gray-100 p-2 rounded transition-colors duration-200;
+}
+
+.accordionContent {
+  @apply h-64 mt-2 pl-6;
+}
+
+.detailedView {
+  @apply h-96;
+}
+
+.footer {
+  @apply mt-8 text-center text-sm text-gray-500;
+}
+
+.chartContainer {
+  @apply h-64 w-full bg-gray-200 flex items-center justify-center;
+}

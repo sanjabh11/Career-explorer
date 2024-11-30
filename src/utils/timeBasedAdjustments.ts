@@ -44,35 +44,74 @@ const timeBasedFactors: TimeBasedFactors = {
   }
 };
 
-export const getTimeBasedAdjustment = (
-  baseAPO: number,
-  timeframe: number, // years
+export function getTimeBasedAdjustment(
+  baseScore: number,
+  timeframe: number,
   industry: string,
   region: string,
-  skillset: string[]
-): number => {
-  // Get industry-specific growth rate
-  const industryGrowth = timeBasedFactors.industryGrowthRates[industry] || timeBasedFactors.baseGrowthRate;
+  occupation: string
+): number {
+  // Calculate industry-specific time adjustment
+  const industryFactor = getIndustryTimeFactor(industry, timeframe);
   
-  // Get region-specific growth rate
-  const regionalGrowth = timeBasedFactors.regionalGrowthRates[region] || timeBasedFactors.baseGrowthRate;
+  // Calculate region-specific time adjustment
+  const regionFactor = getRegionTimeFactor(region, timeframe);
   
-  // Calculate skill obsolescence impact
-  const skillObsolescence = skillset.reduce((total, skill) => {
-    return total + (timeBasedFactors.skillObsolescenceRates[skill] || 0);
-  }, 0) / skillset.length;
+  // Calculate occupation-specific time adjustment
+  const occupationFactor = getOccupationTimeFactor(occupation, timeframe);
   
-  // Combined growth rate
-  const combinedGrowthRate = (
-    timeBasedFactors.baseGrowthRate +
-    industryGrowth +
-    regionalGrowth +
-    skillObsolescence
-  ) / 4;
+  // Combine all factors with appropriate weights
+  const combinedFactor = (
+    industryFactor * 0.4 +
+    regionFactor * 0.3 +
+    occupationFactor * 0.3
+  );
   
-  // Apply compound growth
-  return baseAPO * Math.pow(1 + combinedGrowthRate, timeframe);
-};
+  // Apply the combined factor to the base score
+  return Math.min(1, baseScore * (1 + combinedFactor));
+}
+
+function getIndustryTimeFactor(industry: string, timeframe: number): number {
+  // Industry-specific time-based adjustments
+  const industryGrowthRates: Record<string, number> = {
+    'Technology': 0.15,
+    'Healthcare': 0.12,
+    'Manufacturing': 0.08,
+    'Finance': 0.10,
+    'Retail': 0.06
+  };
+  
+  const growthRate = industryGrowthRates[industry] || 0.08;
+  return growthRate * Math.min(timeframe, 10);
+}
+
+function getRegionTimeFactor(region: string, timeframe: number): number {
+  // Region-specific time-based adjustments
+  const regionFactors: Record<string, number> = {
+    'North America': 0.12,
+    'Europe': 0.10,
+    'Asia': 0.15,
+    'South America': 0.08,
+    'Africa': 0.06
+  };
+  
+  const baseFactor = regionFactors[region] || 0.08;
+  return baseFactor * Math.min(timeframe, 8);
+}
+
+function getOccupationTimeFactor(occupation: string, timeframe: number): number {
+  // Occupation-specific time-based adjustments
+  const occupationFactors: Record<string, number> = {
+    'Software Developer': 0.15,
+    'Data Scientist': 0.18,
+    'Business Analyst': 0.12,
+    'Project Manager': 0.08,
+    'Sales Representative': 0.06
+  };
+  
+  const baseFactor = occupationFactors[occupation] || 0.10;
+  return baseFactor * Math.min(timeframe, 12);
+}
 
 export const getSkillObsolescenceTimeline = (
   skills: string[],

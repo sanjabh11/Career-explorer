@@ -5,25 +5,53 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { HelpCircle } from "lucide-react";
 import { getTimeBasedAdjustment, getSkillObsolescenceTimeline, getIndustryAutomationTimeline } from '@/utils/timeBasedAdjustments';
-import { EmergingTechnology, calculateEmergingTechImpact, getTechnologyRecommendations, emergingTechnologies } from '@/utils/emergingTechFactors';
+import { EmergingTechnology } from '../types/emergingTech';
+import { calculateEmergingTechImpact, getTechnologyRecommendations, emergingTechnologies } from '../utils/emergingTechFactors';
+import { HistoricalDataPoint } from '../types/historicalData';
 import { AutomationFactor } from '@/types/automation';
+import { HistoricalCorrelationEngine } from '../utils/historicalCorrelation';
+import { ConfidenceScoringSystem } from '../utils/confidenceScoring';
 import styles from '@/styles/TimeBasedAnalysis.module.css';
 
 interface TimeBasedAnalysisProps {
+  technology: EmergingTechnology;
+  historicalData: HistoricalDataPoint[];
+  timeframeYears: number;
   baseAutomationScore: number;
   industry: string;
   region: string;
-  skillset: string[];
-  task: AutomationFactor;
+  occupation: string;
+  task: string;
 }
 
 const TimeBasedAnalysis: React.FC<TimeBasedAnalysisProps> = ({
+  technology,
+  historicalData,
+  timeframeYears,
   baseAutomationScore,
   industry,
   region,
-  skillset,
+  occupation,
   task
 }) => {
+  const correlationEngine = new HistoricalCorrelationEngine();
+  const confidenceSystem = new ConfidenceScoringSystem();
+
+  // Add historical data points
+  historicalData.forEach(dataPoint => correlationEngine.addDataPoint(dataPoint));
+
+  // Calculate correlations and confidence
+  const correlation = correlationEngine.analyzeCorrelation(
+    technology,
+    timeframeYears * 12
+  );
+
+  const confidence = confidenceSystem.calculateConfidence(
+    technology,
+    timeframeYears,
+    historicalData.length
+  );
+
   const [timeframe, setTimeframe] = React.useState(5); // Default 5 years
   const [selectedTechs, setSelectedTechs] = React.useState<EmergingTechnology[]>([]);
   
@@ -36,9 +64,9 @@ const TimeBasedAnalysis: React.FC<TimeBasedAnalysisProps> = ({
       timeframe,
       industry,
       region,
-      skillset
+      occupation
     );
-  }, [baseAutomationScore, timeframe, industry, region, skillset]);
+  }, [baseAutomationScore, timeframe, industry, region, occupation]);
 
   const techImpact = React.useMemo(() => {
     return calculateEmergingTechImpact(task, selectedTechs);
@@ -48,8 +76,8 @@ const TimeBasedAnalysis: React.FC<TimeBasedAnalysisProps> = ({
   
   // Get relevant technology recommendations
   const techRecommendations = React.useMemo(() => {
-    return getTechnologyRecommendations(industry, skillset);
-  }, [industry, skillset]);
+    return getTechnologyRecommendations(industry, occupation);
+  }, [industry, occupation]);
 
   return (
     <TooltipProvider>
@@ -102,7 +130,7 @@ const TimeBasedAnalysis: React.FC<TimeBasedAnalysisProps> = ({
               </div>
               
               <div className={styles.techList}>
-                {techRecommendations.map((tech) => (
+                {techRecommendations.map((tech: EmergingTechnology) => (
                   <div key={tech.name} className={styles.techItem}>
                     <label className={styles.techLabel}>
                       <input
@@ -119,10 +147,13 @@ const TimeBasedAnalysis: React.FC<TimeBasedAnalysisProps> = ({
                       />
                       <span className={styles.techName}>{tech.name}</span>
                       <span className={styles.techMaturity}>
-                        ({tech.timeToMaturity} {tech.timeToMaturity === 1 ? 'year' : 'years'} to maturity)
+                        ({tech.timeToMainstream} {tech.timeToMainstream === 1 ? 'month' : 'months'} to mainstream)
                       </span>
                     </label>
-                    <p className={styles.techDescription}>{tech.description}</p>
+                    <p className={styles.techDescription}>
+                      Impact Score: {(tech.impactScore * 100).toFixed(0)}% | 
+                      Maturity: {tech.maturityLevel}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -177,11 +208,104 @@ const TimeBasedAnalysis: React.FC<TimeBasedAnalysisProps> = ({
               </div>
               <Progress value={finalScore * 100} className="w-full" />
             </div>
+
+            <div className={styles.trendAnalysisSection}>
+              <div className={styles.header}>
+                <h2>Time-Based Analysis</h2>
+                <div className={styles.confidenceIndicator}>
+                  Confidence Score: {(confidence.overall * 100).toFixed(1)}%
+                </div>
+              </div>
+
+              <div className={styles.content}>
+                <div className={styles.trendAnalysis}>
+                  <h3>Trend Analysis</h3>
+                  <div className={styles.trendDirection}>
+                    <TrendIndicator
+                      direction={correlation.trendDirection}
+                      strength={correlation.correlationScore}
+                    />
+                  </div>
+                  <div className={styles.keyFactors}>
+                    <h4>Key Influencing Factors</h4>
+                    <ul>
+                      {correlation.keyFactors.map(factor => (
+                        <li key={factor}>{factor}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <div className={styles.confidenceBreakdown}>
+                  <h3>Confidence Breakdown</h3>
+                  <div className={styles.metrics}>
+                    <MetricBar
+                      label="Data Quality"
+                      value={confidence.breakdown.dataQuality}
+                    />
+                    <MetricBar
+                      label="Market Stability"
+                      value={confidence.breakdown.marketStability}
+                    />
+                    <MetricBar
+                      label="Technology Maturity"
+                      value={confidence.breakdown.technologyMaturity}
+                    />
+                    <MetricBar
+                      label="Industry Relevance"
+                      value={confidence.breakdown.industryRelevance}
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.recommendations}>
+                  <h3>Recommendations</h3>
+                  <ul>
+                    {confidence.recommendations.map((rec, index) => (
+                      <li key={index}>{rec}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
     </TooltipProvider>
   );
 };
+
+const TrendIndicator: React.FC<{
+  direction: 'increasing' | 'decreasing' | 'stable';
+  strength: number;
+}> = ({ direction, strength }) => (
+  <div className={`${styles.trend} ${styles[direction]}`}>
+    <span className={styles.arrow}>
+      {direction === 'increasing' ? '↑' : 
+       direction === 'decreasing' ? '↓' : '→'}
+    </span>
+    <span className={styles.strength}>
+      {(strength * 100).toFixed(1)}% confidence
+    </span>
+  </div>
+);
+
+const MetricBar: React.FC<{
+  label: string;
+  value: number;
+}> = ({ label, value }) => (
+  <div className={styles.metricBar}>
+    <span className={styles.label}>{label}</span>
+    <div className={styles.bar}>
+      <div 
+        className={styles.fill}
+        style={{ width: `${value * 100}%` }}
+      />
+    </div>
+    <span className={styles.value}>
+      {(value * 100).toFixed(0)}%
+    </span>
+  </div>
+);
 
 export default TimeBasedAnalysis;
