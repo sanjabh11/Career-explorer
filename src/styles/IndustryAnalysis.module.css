@@ -1,0 +1,47 @@
+.rangeInput {
+  @apply w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer;
+}
+
+.rangeInput::-webkit-slider-thumb {
+  @apply w-4 h-4 bg-primary border-0 rounded-full appearance-none cursor-pointer;
+}
+
+.rangeInput::-moz-range-thumb {
+  @apply w-4 h-4 bg-primary border-0 rounded-full appearance-none cursor-pointer;
+}
+
+.rangeInput:focus {
+  @apply outline-none ring-2 ring-primary ring-offset-2;
+}
+
+.formControl {
+  @apply space-y-2;
+}
+
+.label {
+  @apply text-sm font-medium flex justify-between items-center;
+}
+
+.valueDisplay {
+  @apply text-sm font-semibold text-primary;
+}
+
+.cardContent {
+  @apply space-y-6;
+}
+
+.sectionDivider {
+  @apply mt-6 pt-4 border-t;
+}
+
+.scoreDisplay {
+  @apply flex justify-between items-center mb-2;
+}
+
+.scoreLabel {
+  @apply font-medium;
+}
+
+.scoreValue {
+  @apply text-lg font-bold text-primary;
+}

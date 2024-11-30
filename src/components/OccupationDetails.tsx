@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import EnhancedAPOAnalysis from './EnhancedAPOAnalysis';
 import APOChart from './APOChart';
+import IndustryAnalysis from './IndustryAnalysis';
 import { AutomationFactor } from '@/types/automation';
 import { calculateAPO, getAverageAPO, calculateOverallAPO } from '../utils/apoCalculations';
 import { Briefcase, Book, Brain, BarChart2, Cpu } from 'lucide-react';
@@ -104,6 +105,7 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
         <TabsList>
           <TabsTrigger value="apo">Automation Potential</TabsTrigger>
           <TabsTrigger value="details">Category Details</TabsTrigger>
+          <TabsTrigger value="industry">Industry Analysis</TabsTrigger>
           <TabsTrigger value="enhanced">Enhanced Analysis</TabsTrigger>
         </TabsList>
 
@@ -181,6 +183,16 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
               </Accordion>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="industry">
+          <IndustryAnalysis
+            baseAutomationScore={calculateOverallAPO(occupation) / 100}
+            onIndustryFactorChange={(factor) => {
+              // You can store this factor in state if needed
+              console.log('Industry factor updated:', factor);
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="enhanced">
