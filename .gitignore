@@ -11,14 +11,6 @@
 # production
 /build
 
-# next.js
-/.next/
-/out/
-
-# netlify
-/.netlify/
-.netlify/
-
 # misc
 .DS_Store
 .env.local

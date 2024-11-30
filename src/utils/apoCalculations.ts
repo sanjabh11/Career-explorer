@@ -2,6 +2,7 @@
 
 // Import necessary types and data
 import { APOItem } from '@/types/onet';
+import { AutomationFactor, TaskComplexity, IndustryContext, APOResult } from '@/types/automation';
 import { APO_CATEGORIES, SynonymMap } from './apoData';
 
 const findBestMatch = (text: string, categories: Record<string, number>): number => {
@@ -132,7 +133,6 @@ export const calculateOverallAPO = (data: {
 export const assignGenAIImpact = (item: APOItem): APOItem => {
   const lowImpactKeywords = ['manual', 'physical', 'inspect', 'repair'];
   const highImpactKeywords = ['analyze', 'calculate', 'predict', 'optimize'];
-
   const text = `${item.name} ${item.description}`.toLowerCase();
 
   if (highImpactKeywords.some(keyword => text.includes(keyword))) {
@@ -142,4 +142,119 @@ export const assignGenAIImpact = (item: APOItem): APOItem => {
   } else {
     return { ...item, genAIImpact: 'Medium' };
   }
+};
+
+// Enhanced APO Calculations
+export const calculateEnhancedAPO = (
+  item: AutomationFactor,
+  industryContext?: IndustryContext
+): APOResult => {
+  const baseAPO = calculateBaseAPO(item);
+  const complexityFactor = getComplexityFactor(item.complexity);
+  const collaborationFactor = getHumanAICollaborationFactor(item.humanAICollaboration);
+  const industryFactor = getIndustrySpecificFactor(item.industrySpecific, industryContext);
+  const emergingTechFactor = getEmergingTechFactor(item.emergingTechImpact);
+
+  const score = baseAPO * complexityFactor * collaborationFactor * industryFactor * emergingTechFactor;
+  
+  return {
+    score,
+    factors: {
+      baseAPO,
+      complexityFactor,
+      collaborationFactor,
+      industryFactor,
+      emergingTechFactor
+    },
+    confidence: calculateConfidenceScore(item),
+    recommendations: generateRecommendations(item, score)
+  };
+};
+
+const calculateBaseAPO = (item: AutomationFactor): number => {
+  // Base calculation considering weight and category
+  const categoryMultiplier = getCategoryMultiplier(item.category);
+  return item.weight * categoryMultiplier;
+};
+
+const getComplexityFactor = (complexity: number): number => {
+  // Higher complexity = lower automation potential
+  return 1 - (complexity * 0.15);
+};
+
+const getHumanAICollaborationFactor = (collaboration: number): number => {
+  // Higher collaboration need = lower full automation potential
+  return 1 - (collaboration * 0.2);
+};
+
+const getIndustrySpecificFactor = (
+  isIndustrySpecific: boolean,
+  context?: IndustryContext
+): number => {
+  if (!context) return isIndustrySpecific ? 0.8 : 1;
+  
+  // Consider industry context if available
+  const techMaturityImpact = context.techMaturity * 0.4;
+  const regulatoryImpact = (1 - context.regulatoryComplexity) * 0.3;
+  const humanInteractionImpact = (1 - context.humanInteractionLevel) * 0.3;
+  
+  return isIndustrySpecific 
+    ? (techMaturityImpact + regulatoryImpact + humanInteractionImpact) * 0.8
+    : 1;
+};
+
+const getEmergingTechFactor = (impact: number): number => {
+  // Higher emerging tech impact = higher automation potential
+  return 1 + (impact * 0.3);
+};
+
+const calculateConfidenceScore = (item: AutomationFactor): number => {
+  // Calculate confidence based on data quality and completeness
+  const factors = [
+    item.weight !== undefined,
+    item.complexity >= 1 && item.complexity <= 5,
+    item.humanAICollaboration >= 0 && item.humanAICollaboration <= 1,
+    item.emergingTechImpact >= 0 && item.emergingTechImpact <= 1
+  ];
+  
+  return factors.filter(Boolean).length / factors.length;
+};
+
+const generateRecommendations = (
+  item: AutomationFactor,
+  score: number
+): string[] => {
+  const recommendations: string[] = [];
+
+  if (score > 0.8) {
+    recommendations.push("High automation potential - Consider full automation");
+  } else if (score > 0.5) {
+    recommendations.push("Medium automation potential - Consider partial automation");
+    if (item.humanAICollaboration > 0.6) {
+      recommendations.push("Focus on human-AI collaboration tools");
+    }
+  } else {
+    recommendations.push("Low automation potential - Focus on augmentation");
+    if (item.complexity > 3) {
+      recommendations.push("Consider breaking down into simpler sub-tasks");
+    }
+  }
+
+  if (item.emergingTechImpact > 0.7) {
+    recommendations.push("Monitor emerging technologies for new automation opportunities");
+  }
+
+  return recommendations;
+};
+
+const getCategoryMultiplier = (category: string): number => {
+  const categoryWeights: Record<string, number> = {
+    'cognitive': 0.9,
+    'manual': 0.7,
+    'social': 0.5,
+    'creative': 0.6,
+    'analytical': 0.8
+  };
+  
+  return categoryWeights[category.toLowerCase()] || 0.7;
 };

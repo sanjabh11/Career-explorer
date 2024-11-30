@@ -10,7 +10,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Progress } from "@/components/ui/progress";
 import { InteractiveChart } from './InteractiveChart';
 import APOChart from './APOChart';
-import { Occupation, OccupationDetails } from '@/types/onet';
+import OccupationDetails from './OccupationDetails';
+import { Occupation, OccupationDetails as OccupationDetailsType } from '@/types/onet';
 import { useOccupationSearch } from '../hooks/useOccupationSearch';
 import { useDebounce } from '../hooks/useDebounce';
 import { calculateAPO, getAverageAPO, calculateOverallAPO } from '../utils/apoCalculations';
@@ -73,8 +74,8 @@ const JobTaxonomySelector: React.FC = () => {
       </div>
     );
   }, []);
-  
-  const renderAutomationAnalysis = useCallback((occupation: OccupationDetails) => {
+
+  const renderAutomationAnalysis = useCallback((occupation: OccupationDetailsType) => {
     const categories = [
       { name: 'Tasks', items: occupation.tasks, category: 'tasks' },
       { name: 'Knowledge', items: occupation.knowledge, category: 'knowledge' },
@@ -111,27 +112,27 @@ const JobTaxonomySelector: React.FC = () => {
 
     if (results.length > 0) {
       return (
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle>Search Results</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {results.map((occupation) => (
-                <li key={occupation.code} className="flex justify-between items-center">
-                  <span>{occupation.title}</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
+        <div className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Search Results</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {results.map((occupation) => (
+                  <button
+                    key={occupation.code}
+                    className="w-full text-left p-2 hover:bg-gray-100 rounded transition-colors"
                     onClick={() => handleOccupationSelect(occupation)}
                   >
-                    View Details
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+                    <div className="font-medium">{occupation.title}</div>
+                    <div className="text-sm text-gray-500">{occupation.code}</div>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       );
     }
 
@@ -161,84 +162,9 @@ const JobTaxonomySelector: React.FC = () => {
       <div className={styles.mainContent}>
         <div className={styles.occupationDetails}>
           {selectedOccupation && (
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="flex justify-between items-center">
-                  <span>{selectedOccupation.title}</span>
-                  <span className="text-sm font-normal text-gray-500">O*NET-SOC Code: {selectedOccupation.code}</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="mb-4">{selectedOccupation.description}</p>
-                <div className="flex justify-between items-center mb-4">
-                  <span className="font-bold text-lg">Overall APO:</span>
-                  <div className="flex items-center">
-                    <Progress 
-                      value={calculateOverallAPO({
-                        tasks: selectedOccupation.tasks,
-                        knowledge: selectedOccupation.knowledge,
-                        skills: selectedOccupation.skills,
-                        abilities: selectedOccupation.abilities,
-                        technologies: selectedOccupation.technologies
-                      })} 
-                      className={`w-32 mr-2 ${styles.apoProgress}`} 
-                    />
-                    <span className="text-2xl font-bold">
-                      {calculateOverallAPO({
-                        tasks: selectedOccupation.tasks,
-                        knowledge: selectedOccupation.knowledge,
-                        skills: selectedOccupation.skills,
-                        abilities: selectedOccupation.abilities,
-                        technologies: selectedOccupation.technologies
-                      }).toFixed(2)}%
-                    </span>
-                  </div>
-                </div>
-                {renderAutomationAnalysis(selectedOccupation)}
-                <Accordion type="single" collapsible className="mb-4">
-                  <AccordionItem value="tasks">
-                    <AccordionTrigger className="flex items-center">
-                      <Briefcase className="mr-2" /> Tasks
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      {renderAccordionContent('Tasks', selectedOccupation.tasks, 'tasks')}
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="knowledge">
-                    <AccordionTrigger className="flex items-center">
-                      <Book className="mr-2" /> Knowledge
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      {renderAccordionContent('Knowledge', selectedOccupation.knowledge, 'knowledge')}
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="skills">
-                    <AccordionTrigger className="flex items-center">
-                      <Brain className="mr-2" /> Skills
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      {renderAccordionContent('Skills', selectedOccupation.skills, 'skills')}
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="abilities">
-                    <AccordionTrigger className="flex items-center">
-                      <BarChart2 className="mr-2" /> Abilities
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      {renderAccordionContent('Abilities', selectedOccupation.abilities, 'abilities')}
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="technologies">
-                    <AccordionTrigger className="flex items-center">
-                      <Cpu className="mr-2" /> Technologies
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      {renderAccordionContent('Technologies', selectedOccupation.technologies, 'technologies')}
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </CardContent>
-            </Card>
+            <div className="mt-4">
+              <OccupationDetails occupation={selectedOccupation} />
+            </div>
           )}
         </div>
 
@@ -260,7 +186,7 @@ const JobTaxonomySelector: React.FC = () => {
         </div>
       </div>
       <footer className={styles.footer}>
-        © Conceptualised & presented by Ignite IT consulting
+        &copy; Conceptualised & presented by Ignite IT consulting
       </footer>
     </div>
   );
