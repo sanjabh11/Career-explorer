@@ -2,6 +2,7 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { APOItem } from '@/types/onet';
 import { calculateAPO } from '@/utils/apoCalculations';
+import { CustomTooltipProps } from '@/types/occupation';
 
 interface APOBreakdownProps {
   items: APOItem[];
@@ -42,9 +43,9 @@ const APOBreakdown: React.FC<APOBreakdownProps> = ({ items, category }) => {
           <XAxis type="number" domain={[0, 100]} />
           <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 12 }} />
           <Tooltip 
-            formatter={(value: number, name: string, props: any) => [
+            formatter={(value: number, name: string, props: CustomTooltipProps<number, string>) => [
               `${value.toFixed(2)}%`, 
-              `APO - GenAI Impact: ${props.payload.genAIImpact || 'N/A'}`
+              `APO - GenAI Impact: ${props.payload?.[0]?.payload.genAIImpact || 'N/A'}`
             ]}
             labelFormatter={(label) => data.find(item => item.name === label)?.fullName || label}
           />

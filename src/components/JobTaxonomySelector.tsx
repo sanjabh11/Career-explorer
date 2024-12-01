@@ -1,17 +1,18 @@
 // src/components/JobTaxonomySelector.tsx
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import OccupationDetails from './OccupationDetails';
+import { Task, Skill, WorkActivity, Technology, Knowledge, Ability, OccupationData } from '@/types/occupation';
+import { APOItem, OccupationDetails as OccupationDetailsType } from '@/types/onet';
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 import { InteractiveChart } from './InteractiveChart';
 import APOChart from './APOChart';
-import OccupationDetails from './OccupationDetails';
-import { Occupation, OccupationDetails as OccupationDetailsType } from '@/types/onet';
 import { useOccupationSearch } from '../hooks/useOccupationSearch';
 import { useDebounce } from '../hooks/useDebounce';
 import { calculateAPO, getAverageAPO, calculateOverallAPO } from '../utils/apoCalculations';
@@ -40,16 +41,16 @@ const JobTaxonomySelector: React.FC = () => {
     }
   }, [debouncedSearchTerm, handleSearch]);
 
-  const renderAccordionContent = useCallback((title: string, items: any[], category: string) => {
+  const renderAccordionContent = useCallback((title: string, items: APOItem[], category: string) => {
     const averageAPO = getAverageAPO(items, category);
     return (
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold">{title}</h3>
-          <div className="flex items-center">
-            <span className="mr-2">Average APO:</span>
+          <div className="flex items-center gap-2">
+            <span>Average APO:</span>
             <Progress value={averageAPO} className="w-24" />
-            <span className="ml-2">{averageAPO.toFixed(2)}%</span>
+            <span>{averageAPO.toFixed(2)}%</span>
           </div>
         </div>
         <APOBreakdown items={items} category={category} />
@@ -62,7 +63,7 @@ const JobTaxonomySelector: React.FC = () => {
                 <span className="mr-2">APO:</span>
                 <Progress value={calculateAPO(item, category)} className="w-24" />
                 <span className="ml-2">{calculateAPO(item, category).toFixed(2)}%</span>
-                {item.genAIImpact && (
+                {'genAIImpact' in item && item.genAIImpact && (
                   <span className="ml-2 text-sm font-semibold">
                     GenAI Impact: {item.genAIImpact}
                   </span>
@@ -139,6 +140,51 @@ const JobTaxonomySelector: React.FC = () => {
     return null;
   };
 
+  const convertSelectedOccupation = (selected: OccupationDetailsType): OccupationData => {
+    return {
+      code: selected.code || '',
+      title: selected.title || '',
+      description: selected.description || '',
+      // Convert tasks to WorkActivity type
+      workActivities: selected.tasks.slice(0, 3).map(item => ({
+        name: item.name || '',
+        description: item.description || '',
+        value: item.value
+      })),
+      industry_specific: false,
+      knowledge: selected.knowledge.map(item => ({
+        name: item.name || '',
+        description: item.description || '',
+        level: item.level || 0,
+        value: item.value
+      })),
+      abilities: selected.abilities.map(item => ({
+        name: item.name || '',
+        description: item.description || '',
+        level: item.level || 0,
+        value: item.value
+      })),
+      skills: selected.skills.map(item => ({
+        name: item.name || '',
+        description: item.description || '',
+        level: item.level || 0,
+        value: item.value,
+        category: 'general' // Default category for all skills
+      })),
+      tasks: selected.tasks.map(item => ({
+        name: item.name || '',
+        description: item.description || '',
+        value: item.value,
+        genAIImpact: item.genAIImpact
+      })),
+      technologies: selected.technologies.map(item => ({
+        name: item.name || '',
+        description: item.description || '',
+        value: item.value
+      }))
+    };
+  };
+
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>GenAI Skill-Set Exposure Tool</h1>
@@ -163,7 +209,9 @@ const JobTaxonomySelector: React.FC = () => {
         <div className={styles.occupationDetails}>
           {selectedOccupation && (
             <div className="mt-4">
-              <OccupationDetails occupation={selectedOccupation} />
+              <OccupationDetails 
+                occupation={convertSelectedOccupation(selectedOccupation)} 
+              />
             </div>
           )}
         </div>
