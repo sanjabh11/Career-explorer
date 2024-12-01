@@ -1,5 +1,5 @@
 import React from 'react';
-import { Select } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -41,11 +41,16 @@ export const ReportStyles: React.FC<ReportStylesProps> = ({ style, onStyleChange
               value={style.font}
               onValueChange={(value) => onStyleChange({ ...style, font: value })}
             >
-              {FONT_OPTIONS.map((option) => (
-                <Select.Option key={option.value} value={option.value}>
-                  {option.label}
-                </Select.Option>
-              ))}
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select font" />
+              </SelectTrigger>
+              <SelectContent>
+                {FONT_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
 
@@ -55,11 +60,16 @@ export const ReportStyles: React.FC<ReportStylesProps> = ({ style, onStyleChange
               value={style.template}
               onValueChange={(value) => onStyleChange({ ...style, template: value })}
             >
-              {TEMPLATE_OPTIONS.map((option) => (
-                <Select.Option key={option.value} value={option.value}>
-                  {option.label}
-                </Select.Option>
-              ))}
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select template" />
+              </SelectTrigger>
+              <SelectContent>
+                {TEMPLATE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
 
@@ -70,6 +80,7 @@ export const ReportStyles: React.FC<ReportStylesProps> = ({ style, onStyleChange
               id="primaryColor"
               value={style.primaryColor}
               onChange={(e) => onStyleChange({ ...style, primaryColor: e.target.value })}
+              className="h-10 p-1"
             />
           </div>
 
@@ -80,10 +91,11 @@ export const ReportStyles: React.FC<ReportStylesProps> = ({ style, onStyleChange
               id="secondaryColor"
               value={style.secondaryColor}
               onChange={(e) => onStyleChange({ ...style, secondaryColor: e.target.value })}
+              className="h-10 p-1"
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 col-span-2">
             <Label htmlFor="headerLogo">Header Logo URL (optional)</Label>
             <Input
               type="text"
@@ -91,6 +103,7 @@ export const ReportStyles: React.FC<ReportStylesProps> = ({ style, onStyleChange
               value={style.headerLogo || ''}
               onChange={(e) => onStyleChange({ ...style, headerLogo: e.target.value })}
               placeholder="https://example.com/logo.png"
+              className="w-full"
             />
           </div>
         </div>
