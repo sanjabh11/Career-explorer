@@ -49,30 +49,22 @@ const analyzeTrends = (data: AutomationTrend[]): { [key: string]: 'increasing' |
   }, {} as { [key: string]: 'increasing' | 'decreasing' | 'stable' });
 };
 
-export const predictAutomationTrend = (
+export const predictAutomationTrend = async (
   historicalData: AutomationTrend[],
-  currentFactors: AutomationFactor[],
-  timeframe: number
-): PredictedAPO => {
-  if (!historicalData.length || !currentFactors.length) {
-    return {
-      predictedAPO: 0,
-      confidence: 0,
-      factors: [],
-      timeframe,
-      lastUpdated: new Date()
-    };
-  }
-
-  const trendSlope = calculateTrendSlope(historicalData);
-  const latestAPO = historicalData[historicalData.length - 1].apoScore;
-  const predictedChange = trendSlope * timeframe;
-  const predictedAPO = Math.max(0, Math.min(100, latestAPO + predictedChange));
-  
+  occupationFactors: AutomationFactor[],
+  timeframeMonths = 6
+): Promise<PredictedAPO> => {
+  const slope = calculateTrendSlope(historicalData);
   const trends = analyzeTrends(historicalData);
-  const confidence = calculateConfidence(historicalData, currentFactors);
+  const confidence = calculateConfidence(historicalData, occupationFactors);
 
-  const factors = currentFactors.map(factor => ({
+  const baseAPO = historicalData.length > 0 
+    ? historicalData[historicalData.length - 1].apoScore 
+    : 50;
+
+  const predictedAPO = Math.min(100, Math.max(0, baseAPO + (slope * timeframeMonths)));
+
+  const factors = occupationFactors.map(factor => ({
     name: factor.name,
     impact: factor.weight * 100,
     trend: trends[factor.name] || 'stable'
@@ -82,7 +74,7 @@ export const predictAutomationTrend = (
     predictedAPO,
     confidence,
     factors,
-    timeframe,
+    timeframe: timeframeMonths,
     lastUpdated: new Date()
   };
 };

@@ -4,6 +4,23 @@
 import { APOItem } from '@/types/onet';
 import { AutomationFactor, TaskComplexity, IndustryContext, APOResult } from '@/types/automation';
 import { APO_CATEGORIES, SynonymMap } from './apoData';
+import { OccupationData } from '@/types/occupation';
+import {
+  calculateTaskComplexity,
+  calculateTaskRepetitiveness,
+  calculateHumanAIInteraction,
+  calculateTechImpact,
+  calculateSkillComplexity,
+  calculateSkillAICollaboration,
+  calculateSkillTechImpact,
+  calculateKnowledgeComplexity,
+  calculateKnowledgeAICollaboration,
+  calculateKnowledgeTechImpact,
+  calculateAbilityComplexity,
+  calculateAbilityRepetitiveness,
+  calculateAbilityAICollaboration,
+  calculateAbilityTechImpact,
+} from './calculationHelpers';
 
 const findBestMatch = (text: string, categories: Record<string, number>): number => {
   let bestMatch = 0;
@@ -194,8 +211,8 @@ const getIndustrySpecificFactor = (
   if (!context) return isIndustrySpecific ? 0.8 : 1;
   
   // Consider industry context if available
-  const techMaturityImpact = context.techMaturity * 0.4;
-  const regulatoryImpact = (1 - context.regulatoryComplexity) * 0.3;
+  const techMaturityImpact = context.marketTrends.techAdoption * 0.4;
+  const regulatoryImpact = (1 - context.regulations.impact) * 0.3;
   const humanInteractionImpact = (1 - context.humanInteractionLevel) * 0.3;
   
   return isIndustrySpecific 
@@ -257,4 +274,78 @@ const getCategoryMultiplier = (category: string): number => {
   };
   
   return categoryWeights[category.toLowerCase()] || 0.7;
+};
+
+export const calculateEnhancedAPOWithContext = async (
+  occupation: OccupationData,
+  industryContext: IndustryContext
+): Promise<{ apo: number; factors: AutomationFactor[] }> => {
+  // Convert occupation data into automation factors
+  const factors: AutomationFactor[] = [
+    // Task-based factor
+    {
+      id: 'tasks',
+      name: 'Task Automation',
+      weight: 0.3,
+      category: 'operational',
+      complexity: calculateTaskComplexity(occupation.tasks),
+      repetitiveness: calculateTaskRepetitiveness(occupation.tasks),
+      humanAICollaboration: calculateHumanAIInteraction(occupation.tasks),
+      industrySpecific: occupation.industry_specific,
+      emergingTechImpact: calculateTechImpact(occupation.technologies),
+    },
+    // Skills-based factor
+    {
+      id: 'skills',
+      name: 'Skill Requirements',
+      weight: 0.25,
+      category: 'cognitive',
+      complexity: calculateSkillComplexity(occupation.skills),
+      repetitiveness: 0.4, // Skills generally have moderate repetitiveness
+      humanAICollaboration: calculateSkillAICollaboration(occupation.skills),
+      industrySpecific: occupation.industry_specific,
+      emergingTechImpact: calculateSkillTechImpact(occupation.skills),
+    },
+    // Knowledge-based factor
+    {
+      id: 'knowledge',
+      name: 'Knowledge Depth',
+      weight: 0.25,
+      category: 'cognitive',
+      complexity: calculateKnowledgeComplexity(occupation.knowledge),
+      repetitiveness: 0.3, // Knowledge work tends to be less repetitive
+      humanAICollaboration: calculateKnowledgeAICollaboration(occupation.knowledge),
+      industrySpecific: occupation.industry_specific,
+      emergingTechImpact: calculateKnowledgeTechImpact(occupation.knowledge),
+    },
+    // Ability-based factor
+    {
+      id: 'abilities',
+      name: 'Required Abilities',
+      weight: 0.2,
+      category: 'physical',
+      complexity: calculateAbilityComplexity(occupation.abilities),
+      repetitiveness: calculateAbilityRepetitiveness(occupation.abilities),
+      humanAICollaboration: calculateAbilityAICollaboration(occupation.abilities),
+      industrySpecific: occupation.industry_specific,
+      emergingTechImpact: calculateAbilityTechImpact(occupation.abilities),
+    },
+  ];
+
+  // Calculate enhanced APO for each factor
+  const factorResults = factors.map(factor => {
+    const result = calculateEnhancedAPO(factor, industryContext);
+    return {
+      ...factor,
+      weight: result.score / 100, // Normalize to 0-1 range
+    };
+  });
+
+  // Calculate overall APO as weighted average
+  const totalAPO = factorResults.reduce((sum, factor) => sum + (factor.weight * 100), 0) / factorResults.length;
+
+  return {
+    apo: totalAPO,
+    factors: factorResults,
+  };
 };

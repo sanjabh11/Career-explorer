@@ -145,43 +145,48 @@ const JobTaxonomySelector: React.FC = () => {
       code: selected.code || '',
       title: selected.title || '',
       description: selected.description || '',
-      // Convert tasks to WorkActivity type
+      tasks: selected.tasks.map(item => ({
+        name: item.name || '',
+        description: item.description || '',
+        value: item.value || 0,
+        level: item.level,
+        genAIImpact: item.genAIImpact
+      })),
       workActivities: selected.tasks.slice(0, 3).map(item => ({
         name: item.name || '',
         description: item.description || '',
-        value: item.value
+        value: item.value || 0
       })),
       industry_specific: false,
+      industry: selected.code?.split('-')[0] || '', // Derive industry from occupation code
       knowledge: selected.knowledge.map(item => ({
         name: item.name || '',
         description: item.description || '',
-        level: item.level || 0,
-        value: item.value
+        value: item.value || 0,
+        level: item.level
       })),
       abilities: selected.abilities.map(item => ({
         name: item.name || '',
         description: item.description || '',
-        level: item.level || 0,
-        value: item.value
+        value: item.value || 0,
+        level: item.level
       })),
       skills: selected.skills.map(item => ({
         name: item.name || '',
         description: item.description || '',
-        level: item.level || 0,
-        value: item.value,
-        category: 'general' // Default category for all skills
-      })),
-      tasks: selected.tasks.map(item => ({
-        name: item.name || '',
-        description: item.description || '',
-        value: item.value,
-        genAIImpact: item.genAIImpact
+        value: item.value || 0,
+        level: item.level,
+        category: item.scale || 'General' // Use scale as category or default to General
       })),
       technologies: selected.technologies.map(item => ({
         name: item.name || '',
         description: item.description || '',
-        value: item.value
-      }))
+        value: item.value || 0,
+        level: item.level,
+        hotTechnology: item.hotTechnology
+      })),
+      automationFactors: [],
+      lastUpdated: new Date()
     };
   };
 

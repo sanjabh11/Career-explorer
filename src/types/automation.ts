@@ -18,9 +18,16 @@ export interface TaskComplexity {
 
 export interface IndustryContext {
   name: string;
-  techMaturity: number;  // 0-1 scale
-  regulatoryComplexity: number;  // 0-1 scale
+  marketTrends: {
+    techAdoption: number;  // 0-1 scale
+    growth: number;  // -1 to 1 scale
+  };
+  regulations: {
+    impact: number;  // 0-1 scale
+    complexity: number;  // 1-5 scale
+  };
   humanInteractionLevel: number;  // 0-1 scale
+  confidenceScore: number;  // 0-1 scale
 }
 
 export interface APOResult {
@@ -34,4 +41,26 @@ export interface APOResult {
   };
   confidence: number;
   recommendations: string[];
+}
+
+export interface AutomationTrend {
+  year: number;
+  score: number;
+  confidence: number;
+  keyFactors?: string[];
+  marketTrends?: string[];
+  industryContext?: {
+    techAdoption: number;
+    growth: number;
+    regulations: {
+      impact: number;
+      complexity: number;
+    };
+  };
+}
+
+export interface AutomationPrediction {
+  trends: AutomationTrend[];
+  confidence: number;
+  factors: AutomationFactor[];
 }

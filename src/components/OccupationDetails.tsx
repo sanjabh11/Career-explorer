@@ -62,12 +62,12 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
         setHistoricalData(historical);
         setResearchData(research);
 
-        const predictionResult = predictAutomationTrend(
+        const predictionResult = await predictAutomationTrend(
           historical,
-          [getAutomationFactor(occupation)],
+          occupation.automationFactors || [],
           12 // predict for next 12 months
         );
-        setPrediction(predictionResult);
+        setPrediction(await predictionResult);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
