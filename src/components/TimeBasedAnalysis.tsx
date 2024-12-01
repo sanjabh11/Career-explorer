@@ -7,7 +7,7 @@ import { HelpCircle } from "lucide-react";
 import { getTimeBasedAdjustment, getSkillObsolescenceTimeline, getIndustryAutomationTimeline } from '@/utils/timeBasedAdjustments';
 import { EmergingTechnology } from '../types/emergingTech';
 import { calculateEmergingTechImpact, getTechnologyRecommendations, emergingTechnologies } from '../utils/emergingTechFactors';
-import { HistoricalDataPoint } from '../types/historicalData';
+import { HistoricalDataPoint as ServiceHistoricalDataPoint } from '../types/historicalData';
 import { AutomationFactor } from '@/types/automation';
 import { HistoricalCorrelationEngine } from '../utils/historicalCorrelation';
 import { ConfidenceScoringSystem } from '../utils/confidenceScoring';
@@ -15,7 +15,7 @@ import styles from '@/styles/TimeBasedAnalysis.module.css';
 
 interface TimeBasedAnalysisProps {
   technology: EmergingTechnology;
-  historicalData: HistoricalDataPoint[];
+  historicalData: ServiceHistoricalDataPoint[];
   timeframeYears: number;
   baseAutomationScore: number;
   industry: string;
@@ -37,8 +37,12 @@ const TimeBasedAnalysis: React.FC<TimeBasedAnalysisProps> = ({
   const correlationEngine = new HistoricalCorrelationEngine();
   const confidenceSystem = new ConfidenceScoringSystem();
 
-  // Add historical data points
-  historicalData.forEach(dataPoint => correlationEngine.addDataPoint(dataPoint));
+  // Convert historical data points to the format expected by HistoricalCorrelationEngine
+  historicalData.forEach(dataPoint => correlationEngine.addDataPoint({
+    timestamp: dataPoint.timestamp,
+    apo: dataPoint.metrics.apo,
+    factors: dataPoint.factors
+  }));
 
   // Calculate correlations and confidence
   const correlation = correlationEngine.analyzeCorrelation(

@@ -1,16 +1,23 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import EnhancedAPOAnalysis from './EnhancedAPOAnalysis';
-import APOChart from './APOChart';
+import APOVisualization from './APOVisualization';
 import IndustryAnalysis from './IndustryAnalysis';
 import { AutomationFactor } from '@/types/automation';
 import { calculateAPO, getAverageAPO, calculateOverallAPO } from '../utils/apoCalculations';
 import { Briefcase, Book, Brain, BarChart2, Cpu } from 'lucide-react';
 import { OccupationData, Task, Skill, WorkActivity, Technology, Knowledge, Ability } from '@/types/occupation';
 import { APOItem } from '@/types/onet';
+import { AutomationDataService } from '@/services/AutomationDataService';
+import { predictAutomationTrend } from '@/utils/automationPrediction';
+import { AutomationTrend, PredictedAPO, ResearchData } from '@/types/automationTrends';
+import HistoricalTrendChart from './HistoricalTrendChart';
+import ResearchInsights from './ResearchInsights';
+import FactorImpactAnalysis from './FactorImpactAnalysis';
 
 const convertToAPOItem = (item: Task | Skill | WorkActivity | Technology | Knowledge | Ability): APOItem => {
   const value = 'level' in item && item.level !== undefined 
@@ -28,6 +35,49 @@ interface OccupationDetailsProps {
 }
 
 const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => {
+  const [historicalData, setHistoricalData] = useState<AutomationTrend[]>([]);
+  const [prediction, setPrediction] = useState<PredictedAPO | null>(null);
+  const [researchData, setResearchData] = useState<ResearchData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [chartType, setChartType] = useState<'radar' | 'bar' | 'pie'>('bar');
+  const automationService = new AutomationDataService();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch historical data
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setFullYear(endDate.getFullYear() - 1);
+
+        const [historical, research] = await Promise.all([
+          automationService.collectHistoricalData(
+            occupation.code || '',
+            { startDate, endDate }
+          ),
+          automationService.getLatestResearchData()
+        ]);
+
+        setHistoricalData(historical);
+        setResearchData(research);
+
+        const predictionResult = predictAutomationTrend(
+          historical,
+          [getAutomationFactor(occupation)],
+          12 // predict for next 12 months
+        );
+        setPrediction(predictionResult);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [occupation.code]);
+
   const getAutomationFactor = (occupation: OccupationData): AutomationFactor => {
     return {
       id: occupation.code || '',
@@ -142,18 +192,20 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
     technologies: occupation.technologies.map(convertToAPOItem)
   };
 
+  const overallAPO = calculateOverallAPO(occupation);
+  
+  const categoryData = {
+    categories: [
+      { name: 'Tasks', value: getAverageAPO(occupation.tasks.map(convertToAPOItem), 'tasks') },
+      { name: 'Knowledge', value: getAverageAPO(occupation.knowledge.map(convertToAPOItem), 'knowledge') },
+      { name: 'Skills', value: getAverageAPO(occupation.skills.map(convertToAPOItem), 'skills') },
+      { name: 'Abilities', value: getAverageAPO(occupation.abilities.map(convertToAPOItem), 'abilities') },
+      { name: 'Technologies', value: getAverageAPO((occupation.technologies || []).map(convertToAPOItem), 'technologies') }
+    ]
+  };
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex justify-between items-center">
-            <span>{occupation.title}</span>
-            <span className="text-sm font-normal text-gray-500">O*NET-SOC Code: {occupation.code}</span>
-          </CardTitle>
-          <CardDescription>{occupation.description}</CardDescription>
-        </CardHeader>
-      </Card>
-
       <Tabs defaultValue="apo" className="space-y-4">
         <TabsList>
           <TabsTrigger value="apo">Automation Potential</TabsTrigger>
@@ -166,21 +218,33 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
           <Card>
             <CardHeader>
               <CardTitle>Overall Automation Potential</CardTitle>
+              <div className="flex justify-between items-center mt-4">
+                <div className="flex items-center gap-4">
+                  <span className="text-lg font-semibold">Overall APO:</span>
+                  <div className="flex items-center gap-2">
+                    <Progress value={calculateOverallAPO(occupation)} className="w-[200px]" />
+                    <span className="text-lg">{calculateOverallAPO(occupation).toFixed(2)}%</span>
+                  </div>
+                </div>
+                <Select value={chartType} onValueChange={(value: 'radar' | 'bar' | 'pie') => setChartType(value)}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select chart type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="radar">Radar Chart</SelectItem>
+                    <SelectItem value="bar">Bar Chart</SelectItem>
+                    <SelectItem value="pie">Pie Chart</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="flex justify-between items-center mb-6">
-                <span className="font-bold text-lg">Overall APO:</span>
-                <div className="flex items-center">
-                  <Progress 
-                    value={calculateOverallAPO(occupation)} 
-                    className="w-32 mr-2" 
-                  />
-                  <span className="text-2xl font-bold">
-                    {calculateOverallAPO(occupation).toFixed(2)}%
-                  </span>
-                </div>
-              </div>
-              <APOChart data={categoryAPOs} />
+              <APOVisualization 
+                data={categoryData}
+                chartType={chartType}
+                onChartTypeChange={setChartType}
+                className="mt-4"
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -249,9 +313,39 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
         </TabsContent>
 
         <TabsContent value="enhanced">
-          <EnhancedAPOAnalysis 
-            automationFactor={getAutomationFactor(occupation)}
-          />
+          <div className="space-y-6">
+            {isLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                <p className="mt-2 text-gray-600">Loading analysis...</p>
+              </div>
+            ) : (
+              <>
+                <EnhancedAPOAnalysis 
+                  automationFactor={getAutomationFactor(occupation)}
+                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <HistoricalTrendChart 
+                    data={historicalData}
+                    predictedTrend={prediction ? [{
+                      date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+                      apoScore: prediction.predictedAPO
+                    }] : undefined}
+                  />
+                  {prediction && (
+                    <FactorImpactAnalysis
+                      currentFactors={[getAutomationFactor(occupation)]}
+                      prediction={prediction}
+                    />
+                  )}
+                </div>
+                <ResearchInsights
+                  data={researchData}
+                  occupationCode={occupation.code || ''}
+                />
+              </>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>

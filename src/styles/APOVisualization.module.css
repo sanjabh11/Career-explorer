@@ -1,0 +1,122 @@
+/* Base styles */
+.container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Mobile view (up to 640px) */
+@media (max-width: 640px) {
+  .container {
+    padding: 0.5rem;
+  }
+
+  .controls {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .chartContainer {
+    height: 300px;
+  }
+}
+
+/* Tablet view (641px to 1024px) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .container {
+    padding: 1rem;
+  }
+
+  .controls {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .chartContainer {
+    height: 400px;
+  }
+}
+
+/* Desktop view (above 1024px) */
+@media (min-width: 1025px) {
+  .container {
+    padding: 1.5rem;
+  }
+
+  .controls {
+    flex-wrap: nowrap;
+    gap: 1rem;
+  }
+
+  .chartContainer {
+    height: 500px;
+  }
+}
+
+/* Chart container */
+.chartWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.control {
+  min-width: 150px;
+}
+
+/* Export options */
+.exportOptions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Loading state */
+.loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* Tooltips */
+.tooltip {
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+/* Legend */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.legendColor {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
