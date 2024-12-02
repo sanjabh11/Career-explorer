@@ -5,8 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Download, FileType, Share, Eye } from 'lucide-react';
 import { AutomationFactor, AutomationTrend } from '@/types/automation';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { PDFGenerator } from './pdfGenerator';
 import { ReportStyles, ReportStyle } from './ReportStyles';
 import { ReportPreview } from './ReportPreview';
 import { exportToExcel } from './excelExport';
@@ -46,105 +45,14 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({
   });
 
   const generatePDF = () => {
-    const doc = new jsPDF();
-    let yPos = 20;
-
-    // Apply styling
-    doc.setFont(style.font);
-    
-    // Add logo if provided
-    if (style.headerLogo) {
-      doc.addImage(style.headerLogo, 'PNG', 20, yPos, 30, 15);
-      yPos += 20;
-    }
-
-    // Title
-    doc.setFontSize(20);
-    doc.setTextColor(style.primaryColor);
-    doc.text(`Career Automation Analysis: ${occupationTitle}`, 20, yPos);
-    yPos += 20;
-
-    if (sections.overview) {
-      doc.setFontSize(16);
-      doc.setTextColor(style.secondaryColor);
-      doc.text('Overview', 20, yPos);
-      yPos += 10;
-      doc.setFontSize(12);
-      doc.setTextColor('#000000');
-      const overallScore = trends[trends.length - 1]?.score || 0;
-      doc.text(`Current Automation Potential: ${overallScore.toFixed(1)}%`, 20, yPos);
-      yPos += 20;
-    }
-
-    if (sections.factors) {
-      doc.setFontSize(16);
-      doc.setTextColor(style.secondaryColor);
-      doc.text('Key Factors', 20, yPos);
-      yPos += 10;
-      
-      const factorData = factors.map(factor => [
-        factor.name,
-        `${(factor.weight * 100).toFixed(1)}%`,
-        `${(factor.emergingTechImpact * 100).toFixed(1)}%`,
-        `${(factor.humanAICollaboration * 100).toFixed(1)}%`,
-      ]);
-
-      (doc as any).autoTable({
-        startY: yPos,
-        head: [['Factor', 'Impact', 'AI Impact', 'Collaboration']],
-        body: factorData,
-        margin: { top: 20 },
-        headStyles: { fillColor: style.primaryColor },
-        alternateRowStyles: { fillColor: `${style.primaryColor}10` },
-      });
-      yPos = (doc as any).lastAutoTable.finalY + 20;
-    }
-
-    if (sections.trends) {
-      doc.setFontSize(16);
-      doc.setTextColor(style.secondaryColor);
-      doc.text('Automation Trends', 20, yPos);
-      yPos += 10;
-
-      const trendData = trends.map(trend => [
-        trend.year.toString(),
-        `${trend.score.toFixed(1)}%`,
-        `${(trend.confidence * 100).toFixed(1)}%`,
-        trend.keyFactors?.join(', ') || '',
-      ]);
-
-      (doc as any).autoTable({
-        startY: yPos,
-        head: [['Year', 'Score', 'Confidence', 'Key Factors']],
-        body: trendData,
-        margin: { top: 20 },
-        headStyles: { fillColor: style.primaryColor },
-        alternateRowStyles: { fillColor: `${style.primaryColor}10` },
-      });
-      yPos = (doc as any).lastAutoTable.finalY + 20;
-    }
-
-    if (sections.recommendations) {
-      doc.setFontSize(16);
-      doc.setTextColor(style.secondaryColor);
-      doc.text('Recommendations', 20, yPos);
-      yPos += 10;
-      doc.setFontSize(12);
-      doc.setTextColor('#000000');
-      
-      const recommendations = generateRecommendations(factors, trends);
-      recommendations.forEach(rec => {
-        if (yPos > 270) {
-          doc.addPage();
-          yPos = 20;
-        }
-        const lines = doc.splitTextToSize(rec, 170);
-        doc.text(lines, 20, yPos);
-        yPos += 10 * lines.length;
-      });
-    }
-
-    doc.save(`${occupationTitle.toLowerCase().replace(/\s+/g, '-')}-automation-report.pdf`);
+    const generator = new PDFGenerator({
+      factors,
+      trends,
+      occupationTitle,
+      style,
+      sections,
+    });
+    generator.generate();
   };
 
   const generateRecommendations = (factors: AutomationFactor[], trends: AutomationTrend[]): string[] => {
