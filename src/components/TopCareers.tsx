@@ -42,6 +42,8 @@ const TopCareers: React.FC<TopCareersProps> = ({ onSelect }) => {
         skills: [],
         abilities: [],
         technologies: [],
+        responsibilities: [],
+        overallAPO: 0
       };
     };
 

@@ -1,0 +1,27 @@
+{
+  "metadata": {
+    "last_updated": "2024-12-04T12:07:49.747587",
+    "version": "1.0",
+    "source_urls": [
+      "https://services.onetcenter.org/reference/",
+      "https://services.onetcenter.org/about",
+      "https://services.onetcenter.org/reference/online",
+      "https://services.onetcenter.org/reference/taxonomy",
+      "https://services.onetcenter.org/reference/database"
+    ]
+  },
+  "core_content": {},
+  "taxonomy": {},
+  "database_structure": {},
+  "api_reference": {},
+  "statistics": {
+    "total_pages": 5,
+    "content_distribution": {
+      "taxonomy": 0,
+      "database": 0,
+      "api": 0,
+      "core": 0
+    },
+    "extraction_timestamp": "2024-12-04T12:07:51.188177"
+  }
+}

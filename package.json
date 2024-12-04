@@ -16,6 +16,8 @@
     "test:performance": "k6 run tests/performance/load-test.js",
     "test:report": "jest --coverage",
     "test:all": "node scripts/run-all-tests.js",
+    "test:phase1": "ts-node --project tsconfig.test.json src/testAgent/phase1-test.ts",
+    "test:phase1:watch": "ts-node-dev --project tsconfig.test.json --respawn src/testAgent/phase1-test.ts",
     "lint": "eslint . --ext .ts,.tsx"
   },
   "proxy": "https://services.onetcenter.org",
@@ -104,7 +106,7 @@
     "@testing-library/react": "^14.1.0",
     "@testing-library/user-event": "^14.5.2",
     "@types/file-saver": "^2.0.7",
-    "@types/jest": "^29.5.0",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20.17.9",
     "@types/papaparse": "^5.3.14",
     "@types/react": "^18.2.0",
@@ -126,6 +128,9 @@
     "k6": "^0.0.0",
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.5",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^4.9.5"
   },
   "eslintConfig": {

@@ -150,7 +150,7 @@ const JobTaxonomySelector: React.FC = () => {
         description: item.description || '',
         value: item.value || 0,
         level: item.level,
-        genAIImpact: item.genAIImpact
+        genAIImpact: item.genAIImpact as 'High' | 'Medium' | 'Low' | undefined
       })),
       workActivities: selected.tasks.slice(0, 3).map(item => ({
         name: item.name || '',

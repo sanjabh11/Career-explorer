@@ -9,25 +9,33 @@ interface APOBreakdownProps {
   category: string;
 }
 
+interface ChartData {
+  name: string;
+  apo: number;
+  genAIImpact?: 'High' | 'Medium' | 'Low';
+}
+
 const APOBreakdown: React.FC<APOBreakdownProps> = ({ items, category }) => {
   const truncateString = (str: string, num: number) => {
     if (str.length <= num) return str;
     return str.slice(0, num) + '...';
   };
 
-  const data = items.map(item => ({
+  const data: ChartData[] = items.map(item => ({
     name: truncateString(item.name, 30), // Limit task name length
-    fullName: item.name, // Keep full name for tooltip
     apo: calculateAPO(item, category),
-    genAIImpact: item.genAIImpact
+    genAIImpact: item.genAIImpact as 'High' | 'Medium' | 'Low' | undefined
   }));
 
-  const getBarColor = (apo: number, genAIImpact: string | undefined) => {
-    if (genAIImpact === 'High') return '#ff0000';
-    if (genAIImpact === 'Medium') return '#ffa500';
-    if (apo > 75) return '#ff4500';
-    if (apo > 50) return '#ffa500';
-    if (apo > 25) return '#ffff00';
+  const getBarColor = (apo: number, genAIImpact: 'High' | 'Medium' | 'Low' | undefined) => {
+    // Convert numeric APO to impact level
+    const apoImpact = apo >= 75 ? 'High' : apo >= 50 ? 'Medium' : 'Low';
+    return getImpactColor(genAIImpact || apoImpact);
+  };
+
+  const getImpactColor = (impact: 'High' | 'Medium' | 'Low') => {
+    if (impact === 'High') return '#ff0000';
+    if (impact === 'Medium') return '#ffa500';
     return '#00ff00';
   };
 
@@ -47,7 +55,7 @@ const APOBreakdown: React.FC<APOBreakdownProps> = ({ items, category }) => {
               `${value.toFixed(2)}%`, 
               `APO - GenAI Impact: ${props.payload?.[0]?.payload.genAIImpact || 'N/A'}`
             ]}
-            labelFormatter={(label) => data.find(item => item.name === label)?.fullName || label}
+            labelFormatter={(label) => data.find(item => item.name === label)?.name || label}
           />
           <Legend />
           <Bar dataKey="apo" name="APO">

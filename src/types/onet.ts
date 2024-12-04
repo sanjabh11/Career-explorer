@@ -1,25 +1,34 @@
 // src/types/onet.ts
 
-export interface APOCategories {
-  tasks: Record<string, number>;
-  knowledge: Record<string, number>;
-  skills: Record<string, number>;
-  abilities: Record<string, number>;
-  technologies: Record<string, number>;
-}
-
 export interface APOItem {
+  id?: string;
   name: string;
   title?: string;
   description: string;
-  importance?: number;
-  level?: number;
   value: number;
+  level?: number;
+  importance?: number;
+  genAIImpact?: 'High' | 'Medium' | 'Low' | number;
   scale?: string;
-  commodityCode?: string;
   hotTechnology?: boolean;
-  date?: string;
-  genAIImpact?: 'Low' | 'Medium' | 'High';
+}
+
+export interface Task extends APOItem {
+  tools?: string[];
+  workActivities?: string[];
+  importance?: number;
+  frequency?: number;
+}
+
+export interface Skill extends APOItem {
+  category: string;
+  importance?: number;
+}
+
+export interface Technology extends APOItem {
+  category: string;
+  yearIntroduced?: number;
+  proficiencyLevel?: number;
 }
 
 export interface Occupation {
@@ -33,11 +42,19 @@ export interface OccupationDetails extends Occupation {
   updated: string;
   overallAPO?: number;
   categories: CategoryData[];
-  tasks: APOItem[];
+  tasks: Task[];
   knowledge: APOItem[];
-  skills: APOItem[];
+  skills: Skill[];
   abilities: APOItem[];
-  technologies: APOItem[];
+  technologies: Technology[];
+  responsibilities: string[];
+  educationLevel?: string;
+  experienceLevel?: string;
+  salaryRange?: {
+    min: number;
+    max: number;
+    median: number;
+  };
 }
 
 export interface CategoryData {
@@ -53,11 +70,9 @@ export interface TopCareer {
   code: string;
 }
 
-// Add the missing type definitions
 export interface DWA {
   id: string;
   description: string;
-  // Add any other properties that might be relevant
 }
 
 export interface JobZoneEducation {
@@ -66,13 +81,11 @@ export interface JobZoneEducation {
   education: string;
   experience: string;
   training: string;
-  // Add any other properties that might be relevant
 }
 
 export interface RelatedOccupation {
   title: string;
   similarity: number;
-  // Add any other properties that might be relevant
 }
 
 export interface WagesEmploymentTrends {
@@ -85,5 +98,12 @@ export interface WagesEmploymentTrends {
 export interface WorkContext {
   category: string;
   description: string;
-  value: number | string; // Depending on how the value is represented, it could be a number or string
+  value: number | string;
+}
+
+export interface ComplexityFactors {
+  taskComplexity: number;
+  skillRequirements: number;
+  technologicalSophistication: number;
+  decisionMakingAutonomy: number;
 }

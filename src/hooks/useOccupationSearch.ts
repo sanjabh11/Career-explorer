@@ -39,13 +39,50 @@ export const useOccupationSearch = () => {
     setError(null);
     try {
       const details = await getOccupationDetails(occupation.code);
-      const updatedOccupation = {
-        ...details,
-        tasks: details.tasks.map(assignGenAIImpact),
-        knowledge: details.knowledge.map(assignGenAIImpact),
-        skills: details.skills.map(assignGenAIImpact),
-        abilities: details.abilities.map(assignGenAIImpact),
-        technologies: details.technologies.map(assignGenAIImpact),
+      const updatedOccupation: OccupationDetails = {
+        code: details.code,
+        title: details.title,
+        description: details.description,
+        sample_of_reported_job_titles: details.sample_of_reported_job_titles,
+        updated: details.updated,
+        categories: details.categories || [],
+        overallAPO: 0,
+        tasks: details.tasks.map((task: any) => ({
+          name: task.name,
+          description: task.description,
+          value: task.value || 0,
+          level: task.level,
+          genAIImpact: undefined
+        })),
+        knowledge: details.knowledge.map((item: any) => ({
+          name: item.name,
+          description: item.description,
+          value: item.value || 0,
+          level: item.level,
+          category: item.category || ''
+        })),
+        skills: details.skills.map((item: any) => ({
+          name: item.name,
+          description: item.description,
+          value: item.value || 0,
+          level: item.level,
+          category: item.category || ''
+        })),
+        abilities: details.abilities.map((item: any) => ({
+          name: item.name,
+          description: item.description,
+          value: item.value || 0,
+          level: item.level
+        })),
+        technologies: details.technologies.map((item: any) => ({
+          name: item.name,
+          description: item.description,
+          value: item.value || 0,
+          level: item.level,
+          hotTechnology: item.hotTechnology,
+          category: item.category || ''
+        })),
+        responsibilities: details.tasks.map((task: any) => task.description)
       };
       setSelectedOccupation(updatedOccupation);
     } catch (error) {

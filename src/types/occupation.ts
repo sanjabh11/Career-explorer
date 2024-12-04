@@ -25,6 +25,7 @@ export interface WorkActivity {
 
 export interface Technology extends BaseItem {
   hotTechnology?: boolean;
+  category?: string;
 }
 
 export interface Skill extends BaseItem {
@@ -89,13 +90,16 @@ export interface OccupationDetails {
   code: string;
   title: string;
   description: string;
-  tasks: ONETAPOItem[];
-  skills: ONETAPOItem[];
-  knowledge: ONETAPOItem[];
-  abilities: ONETAPOItem[];
-  technologies: ONETAPOItem[];
-  industry: string;
-  industry_specific: boolean;
+  tasks: Task[];
+  skills: Skill[];
+  knowledge: Knowledge[];
+  abilities: Ability[];
+  technologies: Technology[];
+  responsibilities: string[];
+  sample_of_reported_job_titles: string[];
+  updated: string;
+  categories: any[];
+  overallAPO?: number;
   workActivities?: WorkActivity[];
   automationFactors?: AutomationFactor[];
   lastUpdated?: Date;

@@ -37,11 +37,42 @@ export const getOccupationDetails = async (code: string): Promise<OccupationDeta
       updated: response.data.updated,
       overallAPO: 0,
       categories: [],
-      tasks: response.data.tasks || [],
-      knowledge: response.data.knowledge || [],
-      skills: response.data.skills || [],
-      abilities: response.data.abilities || [],
-      technologies: response.data.technology_skills || [],
+      tasks: response.data.tasks?.map((task: any) => ({
+        name: task.name,
+        description: task.description,
+        value: task.value || 0,
+        level: task.level,
+        genAIImpact: undefined
+      })) || [],
+      knowledge: response.data.knowledge?.map((item: any) => ({
+        name: item.name,
+        description: item.description,
+        value: item.value || 0,
+        level: item.level,
+        category: item.category || ''
+      })) || [],
+      skills: response.data.skills?.map((item: any) => ({
+        name: item.name,
+        description: item.description,
+        value: item.value || 0,
+        level: item.level,
+        category: item.category || ''
+      })) || [],
+      abilities: response.data.abilities?.map((item: any) => ({
+        name: item.name,
+        description: item.description,
+        value: item.value || 0,
+        level: item.level
+      })) || [],
+      technologies: response.data.technology_skills?.map((item: any) => ({
+        name: item.name,
+        description: item.description,
+        value: item.value || 0,
+        level: item.level,
+        hotTechnology: item.hotTechnology,
+        category: item.category || ''
+      })) || [],
+      responsibilities: response.data.tasks?.map((task: any) => task.description) || []
     };
   } catch (error) {
     console.error('Error fetching occupation details:', error);

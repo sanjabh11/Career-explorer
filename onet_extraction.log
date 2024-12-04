@@ -1,0 +1,9 @@
+2024-12-04 12:07:49,747 - INFO - Starting repository build...
+2024-12-04 12:07:50,834 - WARNING - No main content found for https://services.onetcenter.org/about
+2024-12-04 12:07:50,901 - WARNING - No main content found for https://services.onetcenter.org/reference/database
+2024-12-04 12:07:50,906 - WARNING - No main content found for https://services.onetcenter.org/reference/online
+2024-12-04 12:07:51,035 - WARNING - No main content found for https://services.onetcenter.org/reference/
+2024-12-04 12:07:51,185 - WARNING - No main content found for https://services.onetcenter.org/reference/taxonomy
+2024-12-04 12:07:51,191 - INFO - Repository saved to onet_repository\onet_reference.json
+2024-12-04 12:07:51,192 - INFO - Repository build completed
+2024-12-04 12:07:51,199 - INFO - Sample search results: 0 matches found

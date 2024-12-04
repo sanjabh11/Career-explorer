@@ -31,13 +31,15 @@ const TopCareer: React.FC<TopCareerProps> = ({ onSelect }) => {
       ...occupation,
       description: 'Placeholder description',
       sample_of_reported_job_titles: [],
-      updated: '',
+      updated: new Date().toISOString(),
       categories: [],
       tasks: [],
       knowledge: [],
       skills: [],
       abilities: [],
       technologies: [],
+      responsibilities: [],
+      overallAPO: 0
     };
     onSelect(fullDetails);
   };
