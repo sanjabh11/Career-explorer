@@ -13,19 +13,6 @@ export const navigationStructure = {
             "Task Technology Requirements"
           ]
         },
-        skills: {
-          current: true,
-          components: [
-            "Basic Skills",
-            "Complex Problem Solving",
-            "Resource Management",
-            "Social Skills",
-            "Systems Skills",
-            "Technical Skills",
-            "Skill Importance Ratings",
-            "Skill Level Requirements"
-          ]
-        },
         knowledge: {
           current: true,
           components: [
@@ -47,59 +34,49 @@ export const navigationStructure = {
             "Ability Level Requirements",
             "Ability Importance Ratings"
           ]
-        },
-        technologies: {
+        }
+      }
+    },
+    work_environment: {
+      title: "Work Environment",
+      subcategories: {
+        physical_conditions: {
           current: true,
           components: [
-            "Software Tools",
-            "Hardware Tools",
-            "Emerging Technologies",
-            "Technology Proficiency Levels",
-            "Technology Update Frequency"
-          ]
-        }
-      }
-    },
-    work_context: {
-      title: "Work Context",
-      subcategories: {
-        work_environment: {
-          current: false,
-          components: [
-            "Physical Work Conditions",
-            "Environmental Conditions",
+            "Workspace Type",
+            "Physical Demands",
+            "Environmental Factors",
             "Safety Requirements",
-            "Work Schedule",
-            "Remote Work Options"
+            "Equipment Usage"
           ]
         },
-        work_activities: {
-          current: false,
+        schedule_flexibility: {
+          current: true,
           components: [
-            "Information Input",
-            "Mental Processes",
-            "Work Output",
-            "Interacting With Others",
-            "Activity Importance Ratings"
+            "Work Hours",
+            "Shift Patterns",
+            "Remote Options",
+            "Travel Requirements",
+            "Schedule Flexibility"
           ]
         },
-        work_styles: {
-          current: false,
+        safety_health: {
+          current: true,
           components: [
-            "Achievement Orientation",
-            "Social Influence",
-            "Practical Intelligence",
-            "Dependability",
-            "Attention to Detail"
+            "Safety Protocols",
+            "Health Risks",
+            "Protective Equipment",
+            "Emergency Procedures",
+            "Health Standards"
           ]
         }
       }
     },
-    job_requirements: {
-      title: "Job Requirements",
+    education: {
+      title: "Education",
       subcategories: {
-        education: {
-          current: false,
+        requirements: {
+          current: true,
           components: [
             "Required Degrees",
             "Certifications",
@@ -108,31 +85,31 @@ export const navigationStructure = {
             "Experience Requirements"
           ]
         },
-        skills_development: {
-          current: false,
+        development: {
+          current: true,
           components: [
             "Training Paths",
-            "Skill Development Resources",
+            "Skill Development",
             "Required Coursework",
             "Professional Development"
           ]
         }
       }
     },
-    career_pathways: {
-      title: "Career Pathways",
+    career_path: {
+      title: "Career Path",
       subcategories: {
-        advancement: {
-          current: false,
+        progression: {
+          current: true,
           components: [
-            "Career Progression Paths",
-            "Related Occupations",
+            "Career Ladder",
             "Advancement Requirements",
-            "Experience Milestones"
+            "Experience Milestones",
+            "Role Transitions"
           ]
         },
-        industry_connections: {
-          current: false,
+        industry: {
+          current: true,
           components: [
             "Industry Sectors",
             "Related Industries",
@@ -142,48 +119,25 @@ export const navigationStructure = {
         }
       }
     },
-    labor_market: {
-      title: "Labor Market Information",
+    automation: {
+      title: "Automation",
       subcategories: {
-        employment: {
-          current: false,
+        impact: {
+          current: true,
           components: [
-            "Employment Projections",
-            "Job Openings",
-            "Geographic Distribution",
-            "Industry Concentration"
+            "Automation Risk",
+            "Task Automation",
+            "Technology Impact",
+            "Future Requirements"
           ]
         },
-        wages: {
-          current: false,
+        adaptation: {
+          current: true,
           components: [
-            "Salary Ranges",
-            "Benefits Packages",
-            "Geographic Pay Differences",
-            "Experience-based Pay Scales"
-          ]
-        }
-      }
-    },
-    automation_impact: {
-      title: "Automation Impact",
-      subcategories: {
-        risk_analysis: {
-          current: false,
-          components: [
-            "Automation Probability",
-            "Task Automation Potential",
-            "Technology Impact Assessment",
-            "Future Skill Requirements"
-          ]
-        },
-        adaptation_strategies: {
-          current: false,
-          components: [
-            "Skill Transition Paths",
-            "Emerging Role Opportunities",
-            "Reskilling Requirements",
-            "Technology Adoption Timeline"
+            "Skill Transitions",
+            "Emerging Roles",
+            "Reskilling Needs",
+            "Technology Timeline"
           ]
         }
       }

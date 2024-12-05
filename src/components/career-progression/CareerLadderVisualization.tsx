@@ -1,101 +1,93 @@
 import React from 'react';
+import { CareerPath } from './types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { CareerPath, CareerLevel } from './types';
 import { ChevronRight } from 'lucide-react';
 
 interface Props {
   careerPath: CareerPath;
-  currentLevelId?: string;
+  currentLevelId: string;
 }
 
 const CareerLadderVisualization: React.FC<Props> = ({ careerPath, currentLevelId }) => {
-  const maxLevel = Math.max(...careerPath.levels.map(level => level.level));
+  const levels = careerPath.levels.map((level, index) => ({
+    ...level,
+    displayLevel: careerPath.levels.length - index
+  }));
 
   return (
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>Career Ladder: {careerPath.name}</span>
-          <Badge variant="secondary">{careerPath.domain}</Badge>
+          <span>Career Progression Path</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-[500px] w-full pr-4">
-          <div className="space-y-4">
-            {[...Array(maxLevel)].map((_, index) => {
-              const levelNumber = maxLevel - index;
-              const levelsAtThisNumber = careerPath.levels.filter(
-                level => level.level === levelNumber
-              );
-
-              return (
-                <div key={levelNumber} className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                    {levelNumber}
+        <div className="space-y-8">
+          {levels.map((level) => (
+            <div
+              key={level.id}
+              className={`
+                relative p-4 border rounded-lg
+                ${level.id === currentLevelId ? 'border-primary ring-2 ring-primary/20' : 'border-border'}
+              `}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-semibold">{level.title}</h4>
+                  <p className="text-sm text-muted-foreground">{level.description}</p>
+                </div>
+                <div className="text-right">
+                  <div className="font-medium">
+                    Level {level.displayLevel}
                   </div>
-                  <div className="flex-1 space-y-4">
-                    {levelsAtThisNumber.map(level => (
-                      <Card
-                        key={level.id}
-                        className={`p-4 ${
-                          level.id === currentLevelId
-                            ? 'border-primary border-2'
-                            : ''
-                        }`}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h4 className="font-semibold">{level.title}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {level.description}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm font-medium">
-                              {level.salary.currency}{level.salary.min.toLocaleString()} - {level.salary.currency}{level.salary.max.toLocaleString()}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {level.requirements.experience}+ years
-                            </p>
-                          </div>
-                        </div>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {level.requirements.skills.map(skill => (
-                            <Badge key={skill} variant="outline">
-                              {skill}
-                            </Badge>
-                          ))}
-                        </div>
-                        {level.nextLevels.length > 0 && (
-                          <div className="mt-2 flex items-center text-sm text-muted-foreground">
-                            <ChevronRight className="h-4 w-4" />
-                            <span>Next possible roles: </span>
-                            {level.nextLevels.map(nextId => {
-                              const nextLevel = careerPath.levels.find(
-                                l => l.id === nextId
-                              );
-                              return nextLevel ? (
-                                <Badge
-                                  key={nextId}
-                                  variant="secondary"
-                                  className="ml-2"
-                                >
-                                  {nextLevel.title}
-                                </Badge>
-                              ) : null;
-                            })}
-                          </div>
-                        )}
-                      </Card>
+                  <div className="text-sm text-muted-foreground">
+                    {level.requirements.experience}+ years
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {/* Skills */}
+                <div>
+                  <div className="text-sm font-medium mb-2">Required Skills</div>
+                  <div className="flex flex-wrap gap-2">
+                    {level.requirements.skills.map((skill, i) => (
+                      <Badge key={i} variant="secondary">{skill}</Badge>
                     ))}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </ScrollArea>
+
+                {/* Education */}
+                {level.requirements.education && level.requirements.education.length > 0 && (
+                  <div>
+                    <div className="text-sm font-medium mb-2">Education</div>
+                    <div className="flex flex-wrap gap-2">
+                      {level.requirements.education.map((edu, i) => (
+                        <Badge key={i} variant="outline">{edu}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Salary */}
+                <div>
+                  <div className="text-sm font-medium mb-2">Salary Range</div>
+                  <div className="text-sm">
+                    {level.salary.currency}{level.salary.min.toLocaleString()} - {level.salary.currency}{level.salary.max.toLocaleString()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress Arrow */}
+              {level.displayLevel > 1 && (
+                <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2">
+                  <ChevronRight className="h-4 w-4 transform rotate-90 text-muted-foreground" />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

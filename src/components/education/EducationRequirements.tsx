@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import EducationService, { EducationData } from '../../services/EducationService';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -9,6 +9,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import EducationFilter, { educationLevels } from './EducationFilter';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { GraduationCap, Book, Trophy } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Props {
   occupationId: string;
@@ -27,6 +35,47 @@ const EducationRequirements: React.FC<Props> = ({ occupationId }) => {
   const [selectedLevel, setSelectedLevel] = useState('All Levels');
   const [trackedCerts, setTrackedCerts] = useLocalStorage<Record<string, TrackedCertification>>(`tracked-certs-${occupationId}`, {});
 
+  const [filters, setFilters] = useState({
+    educationLevel: 'All Levels',
+    certificationStatus: 'all',
+    searchQuery: ''
+  });
+
+  const filteredEducation = useMemo(() => {
+    if (!educationData) return { levels: [], certifications: [] };
+
+    let levels = educationData.educationLevels;
+    let certifications = educationData.certifications;
+
+    // Filter by education level
+    if (filters.educationLevel !== 'All Levels') {
+      levels = levels.filter(level => level.level === filters.educationLevel);
+    }
+
+    // Filter certifications by status
+    if (filters.certificationStatus !== 'all') {
+      certifications = certifications.filter(cert => {
+        const tracked = trackedCerts[cert.name];
+        return tracked?.status === filters.certificationStatus;
+      });
+    }
+
+    // Search filter
+    if (filters.searchQuery) {
+      const query = filters.searchQuery.toLowerCase();
+      levels = levels.filter(level => 
+        level.level.toLowerCase().includes(query) || 
+        level.description.toLowerCase().includes(query)
+      );
+      certifications = certifications.filter(cert =>
+        cert.name.toLowerCase().includes(query) ||
+        cert.description.toLowerCase().includes(query)
+      );
+    }
+
+    return { levels, certifications };
+  }, [educationData, filters, trackedCerts]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -41,10 +90,6 @@ const EducationRequirements: React.FC<Props> = ({ occupationId }) => {
 
     fetchData();
   }, [occupationId]);
-
-  const filteredLevels = educationData?.educationLevels.filter(level => 
-    selectedLevel === 'All Levels' || level.level === selectedLevel
-  );
 
   const toggleCertificationTracking = (certName: string) => {
     setTrackedCerts(prev => {
@@ -91,6 +136,48 @@ const EducationRequirements: React.FC<Props> = ({ occupationId }) => {
         <EducationFilter selectedLevel={selectedLevel} onLevelChange={setSelectedLevel} />
       </div>
 
+      <div className="space-y-4 mb-6">
+        <div className="flex flex-wrap gap-4">
+          <Input
+            placeholder="Search education requirements..."
+            value={filters.searchQuery}
+            onChange={(e) => setFilters(prev => ({ ...prev, searchQuery: e.target.value }))}
+            className="max-w-xs"
+          />
+          <Select
+            value={filters.certificationStatus}
+            onValueChange={(value) => setFilters(prev => ({ ...prev, certificationStatus: value }))}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Certification Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="planned">Planned</SelectItem>
+              <SelectItem value="in-progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500">Quick Filters:</span>
+          {['Required', 'Optional', 'Recommended'].map(filter => (
+            <Badge
+              key={filter}
+              variant="outline"
+              className="cursor-pointer hover:bg-primary/10"
+              onClick={() => setFilters(prev => ({
+                ...prev,
+                searchQuery: filter.toLowerCase()
+              }))}
+            >
+              {filter}
+            </Badge>
+          ))}
+        </div>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
@@ -106,7 +193,7 @@ const EducationRequirements: React.FC<Props> = ({ occupationId }) => {
 
           <ScrollArea className="h-[300px] pr-4">
             <div className="space-y-4">
-              {filteredLevels?.map((level, index) => (
+              {filteredEducation.levels.map((level, index) => (
                 <div key={index} className="space-y-2">
                   <div className="flex items-center gap-2">
                     <span>{level.level}</span>
@@ -131,7 +218,7 @@ const EducationRequirements: React.FC<Props> = ({ occupationId }) => {
         <CardContent>
           <ScrollArea className="h-[300px] pr-4">
             <div className="space-y-4">
-              {educationData.certifications.map((cert, index) => (
+              {filteredEducation.certifications.map((cert, index) => (
                 <div key={index} className="space-y-2 p-4 border rounded-lg">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">

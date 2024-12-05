@@ -1,20 +1,18 @@
 export interface CareerLevel {
   id: string;
   title: string;
-  level: number;
   description: string;
-  requirements: {
-    experience: number; // in years
-    skills: string[];
-    certifications?: string[];
-    education?: string[];
-  };
   salary: {
     min: number;
     max: number;
     currency: string;
   };
-  nextLevels: string[]; // IDs of possible next career levels
+  requirements: {
+    experience: number;
+    skills: string[];
+    education: string[];
+    certifications?: string[];
+  };
 }
 
 export interface CareerPath {
@@ -35,11 +33,31 @@ export interface ExperienceMilestone {
 }
 
 export interface ProgressionRequirement {
+  id: string;
+  type: 'skill' | 'education' | 'experience';
+  name: string;
+  description?: string;
+  status: 'not-started' | 'in-progress' | 'completed';
+  timeToComplete?: number; // in months
+}
+
+export interface AdvancementRequirements {
   currentLevel: CareerLevel;
   targetLevel: CareerLevel;
-  missingSkills: string[];
-  missingCertifications: string[];
-  experienceGap: number;
-  educationGap: string[];
-  estimatedTimeToAchieve: number; // in months
+  requirements: {
+    skillGaps: string[];
+    educationGaps: string[];
+    experienceGap: number;
+  };
+  timeEstimates: {
+    skillAcquisition: number;
+    education: number;
+    experience: number;
+  };
+  totalTimeEstimate: number;
+  salaryIncrease: {
+    min: number;
+    max: number;
+    percentage: number;
+  };
 }

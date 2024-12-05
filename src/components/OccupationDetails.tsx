@@ -9,7 +9,7 @@ import APOVisualization from './APOVisualization';
 import IndustryAnalysis from './IndustryAnalysis';
 import { AutomationFactor } from '@/types/automation';
 import { calculateAPO, getAverageAPO, calculateOverallAPO } from '../utils/apoCalculations';
-import { Briefcase, Book, Brain, BarChart2, Cpu, GitBranch } from 'lucide-react';
+import { Briefcase, Book, Brain, BarChart2, Cpu, GitBranch, Building, Shield } from 'lucide-react';
 import { OccupationData, Task, Skill, WorkActivity, Technology, Knowledge, Ability } from '@/types/occupation';
 import { APOItem } from '@/types/onet';
 import { AutomationDataService } from '@/services/AutomationDataService';
@@ -20,6 +20,8 @@ import ResearchInsights from './ResearchInsights';
 import FactorImpactAnalysis from './FactorImpactAnalysis';
 import EducationRequirements from './education/EducationRequirements';
 import CareerProgressionTab from './career-progression/CareerProgressionTab';
+import { WorkEnvironmentTab } from './work-environment/WorkEnvironmentTab';
+import { AutomationRiskTab } from './automation-risk/AutomationRiskTab';
 
 const convertToAPOItem = (item: Task | Skill | WorkActivity | Technology | Knowledge | Ability): APOItem => {
   const value = 'level' in item && item.level !== undefined 
@@ -209,7 +211,7 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
   return (
     <div className="space-y-6">
       <Tabs defaultValue="apo" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6 mb-8">
+        <TabsList className="grid w-full grid-cols-8 mb-8">
           <TabsTrigger value="apo">
             <Briefcase className="h-4 w-4 mr-2" />
             Overview
@@ -221,6 +223,14 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
           <TabsTrigger value="progression">
             <GitBranch className="h-4 w-4 mr-2" />
             Career Path
+          </TabsTrigger>
+          <TabsTrigger value="environment">
+            <Building className="h-4 w-4 mr-2" />
+            Work Environment
+          </TabsTrigger>
+          <TabsTrigger value="automation-risk">
+            <Shield className="h-4 w-4 mr-2" />
+            Automation Risk
           </TabsTrigger>
           <TabsTrigger value="automation">
             <Cpu className="h-4 w-4 mr-2" />
@@ -277,6 +287,14 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
 
         <TabsContent value="progression" className="space-y-4">
           <CareerProgressionTab occupationId={occupation.code} />
+        </TabsContent>
+
+        <TabsContent value="environment" className="space-y-4">
+          <WorkEnvironmentTab occupationId={occupation.code} />
+        </TabsContent>
+
+        <TabsContent value="automation-risk" className="space-y-4">
+          <AutomationRiskTab occupationId={occupation.code} />
         </TabsContent>
 
         <TabsContent value="automation">
