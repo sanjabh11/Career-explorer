@@ -18,6 +18,7 @@ import { AutomationTrend, PredictedAPO, ResearchData } from '@/types/automationT
 import HistoricalTrendChart from './HistoricalTrendChart';
 import ResearchInsights from './ResearchInsights';
 import FactorImpactAnalysis from './FactorImpactAnalysis';
+import EducationRequirements from './education/EducationRequirements';
 
 const convertToAPOItem = (item: Task | Skill | WorkActivity | Technology | Knowledge | Ability): APOItem => {
   const value = 'level' in item && item.level !== undefined 
@@ -212,6 +213,7 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
           <TabsTrigger value="details">Category Details</TabsTrigger>
           <TabsTrigger value="industry">Industry Analysis</TabsTrigger>
           <TabsTrigger value="enhanced">Enhanced Analysis</TabsTrigger>
+          <TabsTrigger value="education">Education Requirements</TabsTrigger>
         </TabsList>
 
         <TabsContent value="apo">
@@ -346,6 +348,10 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
               </>
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="education" className="space-y-4">
+          <EducationRequirements occupationId={occupation.code} />
         </TabsContent>
       </Tabs>
     </div>
