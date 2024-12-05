@@ -1,29 +1,35 @@
-import { WorkEnvironmentData, WorkCondition, SafetyRequirement, ScheduleFlexibility } from '@/components/work-environment/types';
+import { WorkEnvironmentData, WorkCondition, SafetyRequirement, ScheduleFlexibility, RemoteWorkOpportunity } from '@/components/work-environment/types';
 
 class WorkEnvironmentService {
   async getWorkConditions(occupationId: string): Promise<WorkCondition[]> {
     // TODO: Replace with actual API call
     return [
       {
-        type: 'Physical Environment',
+        id: 'wc-001',
+        name: 'Physical Environment',
         description: 'Indoor, climate-controlled office setting',
-        level: 1,
+        level: 0.2,
         frequency: 'constant',
-        impact: 'low'
+        impactOnPerformance: 0.3,
+        adaptationOptions: ['Temperature adjustment', 'Ergonomic furniture', 'Lighting control']
       },
       {
-        type: 'Noise Level',
+        id: 'wc-002',
+        name: 'Noise Level',
         description: 'Moderate office noise',
-        level: 2,
+        level: 0.4,
         frequency: 'constant',
-        impact: 'medium'
+        impactOnPerformance: 0.5,
+        adaptationOptions: ['Noise-canceling headphones', 'Quiet zones', 'Acoustic panels']
       },
       {
-        type: 'Lighting',
+        id: 'wc-003',
+        name: 'Lighting',
         description: 'Well-lit office environment',
-        level: 1,
+        level: 0.2,
         frequency: 'constant',
-        impact: 'low'
+        impactOnPerformance: 0.3,
+        adaptationOptions: ['Task lighting', 'Window shades', 'Anti-glare screens']
       }
     ];
   }
@@ -33,19 +39,33 @@ class WorkEnvironmentService {
     return [
       {
         id: 'sr-001',
-        name: 'Ergonomic Workspace',
+        category: 'Ergonomics',
         description: 'Proper ergonomic setup for computer work',
         priority: 'medium',
-        equipment: ['Ergonomic chair', 'Adjustable desk', 'Monitor stand'],
-        procedures: ['Proper posture maintenance', 'Regular breaks', 'Workspace assessment']
+        complianceLevel: 'mandatory',
+        trainingRequired: true,
+        updateFrequency: 'annual',
+        verificationMethod: 'workspace assessment',
+        consequences: [
+          'Reduced risk of repetitive strain injury',
+          'Improved productivity',
+          'Better employee comfort'
+        ]
       },
       {
         id: 'sr-002',
-        name: 'Eye Safety',
+        category: 'Visual Safety',
         description: 'Protection against digital eye strain',
         priority: 'medium',
-        equipment: ['Anti-glare screen', 'Proper lighting'],
-        procedures: ['20-20-20 rule', 'Screen brightness adjustment']
+        complianceLevel: 'recommended',
+        trainingRequired: true,
+        updateFrequency: 'semi-annual',
+        verificationMethod: 'self-assessment',
+        consequences: [
+          'Reduced eye fatigue',
+          'Maintained visual acuity',
+          'Increased work comfort'
+        ]
       }
     ];
   }
@@ -53,48 +73,85 @@ class WorkEnvironmentService {
   async getScheduleFlexibility(occupationId: string): Promise<ScheduleFlexibility> {
     // TODO: Replace with actual API call
     return {
+      overallFlexibility: 0.8,
       workHours: {
         type: 'flexible',
-        description: 'Flexible working hours with core hours from 10 AM to 4 PM',
-        typicalHours: 40
+        coreHours: ['10:00', '16:00'],
+        flexibleRanges: ['07:00-10:00', '16:00-19:00'],
+        averageHoursPerWeek: 40
       },
-      remoteWork: {
-        available: true,
-        type: 'hybrid',
-        percentage: 60
+      shiftPatterns: {
+        hasShifts: false,
+        rotationFrequency: 'none',
+        typicalShifts: ['standard business hours']
       },
-      shifts: {
-        types: ['Regular Business Hours'],
-        duration: 8
+      timeOffPolicy: {
+        paidTimeOff: 20,
+        sickDays: 10,
+        holidaySchedule: 'standard federal holidays',
+        advanceNoticeRequired: 14
       },
-      flexibility: {
-        schedule: 'high',
-        location: 'high',
-        timeOff: 'medium'
-      }
+      workloadDistribution: {
+        peakPeriods: ['end of quarter', 'project deadlines'],
+        seasonalVariation: 'minimal',
+        overtimeFrequency: 'rare'
+      },
+      accommodations: [
+        'flexible start/end times',
+        'work from home options',
+        'compressed work week'
+      ]
+    };
+  }
+
+  async getRemoteWorkOpportunities(occupationId: string): Promise<RemoteWorkOpportunity> {
+    // TODO: Replace with actual API call
+    return {
+      remoteWorkEligibility: 0.8,
+      currentStatus: 'hybrid',
+      requirements: {
+        technology: ['Laptop', 'VPN', 'Collaboration tools'],
+        security: ['Two-factor authentication', 'Secure network'],
+        workspace: ['Dedicated home office', 'Ergonomic setup']
+      },
+      schedule: {
+        minimumOnsiteDays: 2,
+        flexibleHours: true,
+        timeZoneRequirements: 'overlap with EST business hours'
+      },
+      benefits: {
+        equipmentAllowance: 1000,
+        internetStipend: 50,
+        coworkingAllowance: 200
+      },
+      limitations: [
+        'Some meetings require in-person attendance',
+        'Quarterly team gatherings'
+      ],
+      successFactors: [
+        'Strong communication skills',
+        'Self-motivation',
+        'Time management'
+      ]
     };
   }
 
   async getWorkEnvironmentData(occupationId: string): Promise<WorkEnvironmentData> {
-    const [conditions, safety, schedule] = await Promise.all([
+    const [conditions, safetyRequirements, scheduleFlexibility, remoteWorkOpportunities] = await Promise.all([
       this.getWorkConditions(occupationId),
       this.getSafetyRequirements(occupationId),
-      this.getScheduleFlexibility(occupationId)
+      this.getScheduleFlexibility(occupationId),
+      this.getRemoteWorkOpportunities(occupationId)
     ]);
 
     return {
       conditions,
-      safety,
-      schedule,
-      location: {
-        type: 'Office',
-        description: 'Modern office environment with individual and collaborative spaces',
-        requirements: [
-          'Computer workstation',
-          'Internet connectivity',
-          'Meeting rooms access'
-        ]
-      }
+      safetyRequirements,
+      scheduleFlexibility,
+      remoteWorkOpportunities,
+      overallScore: 0.85,
+      lastUpdated: new Date().toISOString(),
+      nextAssessmentDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days from now
     };
   }
 }
