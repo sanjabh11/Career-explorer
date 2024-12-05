@@ -9,7 +9,7 @@ import APOVisualization from './APOVisualization';
 import IndustryAnalysis from './IndustryAnalysis';
 import { AutomationFactor } from '@/types/automation';
 import { calculateAPO, getAverageAPO, calculateOverallAPO } from '../utils/apoCalculations';
-import { Briefcase, Book, Brain, BarChart2, Cpu } from 'lucide-react';
+import { Briefcase, Book, Brain, BarChart2, Cpu, GitBranch } from 'lucide-react';
 import { OccupationData, Task, Skill, WorkActivity, Technology, Knowledge, Ability } from '@/types/occupation';
 import { APOItem } from '@/types/onet';
 import { AutomationDataService } from '@/services/AutomationDataService';
@@ -19,6 +19,7 @@ import HistoricalTrendChart from './HistoricalTrendChart';
 import ResearchInsights from './ResearchInsights';
 import FactorImpactAnalysis from './FactorImpactAnalysis';
 import EducationRequirements from './education/EducationRequirements';
+import CareerProgressionTab from './career-progression/CareerProgressionTab';
 
 const convertToAPOItem = (item: Task | Skill | WorkActivity | Technology | Knowledge | Ability): APOItem => {
   const value = 'level' in item && item.level !== undefined 
@@ -208,12 +209,31 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
   return (
     <div className="space-y-6">
       <Tabs defaultValue="apo" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="apo">Automation Potential</TabsTrigger>
-          <TabsTrigger value="details">Category Details</TabsTrigger>
-          <TabsTrigger value="industry">Industry Analysis</TabsTrigger>
-          <TabsTrigger value="enhanced">Enhanced Analysis</TabsTrigger>
-          <TabsTrigger value="education">Education Requirements</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-6 mb-8">
+          <TabsTrigger value="apo">
+            <Briefcase className="h-4 w-4 mr-2" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="education">
+            <Book className="h-4 w-4 mr-2" />
+            Education
+          </TabsTrigger>
+          <TabsTrigger value="progression">
+            <GitBranch className="h-4 w-4 mr-2" />
+            Career Path
+          </TabsTrigger>
+          <TabsTrigger value="automation">
+            <Cpu className="h-4 w-4 mr-2" />
+            Automation
+          </TabsTrigger>
+          <TabsTrigger value="skills">
+            <Brain className="h-4 w-4 mr-2" />
+            Skills
+          </TabsTrigger>
+          <TabsTrigger value="trends">
+            <BarChart2 className="h-4 w-4 mr-2" />
+            Trends
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="apo">
@@ -251,7 +271,15 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
           </Card>
         </TabsContent>
 
-        <TabsContent value="details">
+        <TabsContent value="education" className="space-y-4">
+          <EducationRequirements occupationId={occupation.code} />
+        </TabsContent>
+
+        <TabsContent value="progression" className="space-y-4">
+          <CareerProgressionTab occupationId={occupation.code} />
+        </TabsContent>
+
+        <TabsContent value="automation">
           <Card>
             <CardContent>
               <Accordion type="single" collapsible className="w-full">
@@ -350,8 +378,110 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
           </div>
         </TabsContent>
 
-        <TabsContent value="education" className="space-y-4">
-          <EducationRequirements occupationId={occupation.code} />
+        <TabsContent value="skills" className="space-y-4">
+          <Card>
+            <CardContent>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="tasks">
+                  <AccordionTrigger className="flex items-center">
+                    <Briefcase className="mr-2" /> Tasks
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {renderAccordionContent('Tasks', occupationWithAPOItems.tasks, 'tasks')}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="knowledge">
+                  <AccordionTrigger className="flex items-center">
+                    <Book className="mr-2" /> Knowledge
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {renderAccordionContent('Knowledge', occupationWithAPOItems.knowledge, 'knowledge')}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="skills">
+                  <AccordionTrigger className="flex items-center">
+                    <Brain className="mr-2" /> Skills
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {renderAccordionContent('Skills', occupationWithAPOItems.skills, 'skills')}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="abilities">
+                  <AccordionTrigger className="flex items-center">
+                    <BarChart2 className="mr-2" /> Abilities
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {renderAccordionContent('Abilities', occupationWithAPOItems.abilities, 'abilities')}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="technologies">
+                  <AccordionTrigger className="flex items-center">
+                    <Cpu className="mr-2" /> Technologies
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {renderAccordionContent('Technologies', occupationWithAPOItems.technologies, 'technologies')}
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="trends" className="space-y-4">
+          <Card>
+            <CardContent>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="tasks">
+                  <AccordionTrigger className="flex items-center">
+                    <Briefcase className="mr-2" /> Tasks
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {renderAccordionContent('Tasks', occupationWithAPOItems.tasks, 'tasks')}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="knowledge">
+                  <AccordionTrigger className="flex items-center">
+                    <Book className="mr-2" /> Knowledge
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {renderAccordionContent('Knowledge', occupationWithAPOItems.knowledge, 'knowledge')}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="skills">
+                  <AccordionTrigger className="flex items-center">
+                    <Brain className="mr-2" /> Skills
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {renderAccordionContent('Skills', occupationWithAPOItems.skills, 'skills')}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="abilities">
+                  <AccordionTrigger className="flex items-center">
+                    <BarChart2 className="mr-2" /> Abilities
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {renderAccordionContent('Abilities', occupationWithAPOItems.abilities, 'abilities')}
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="technologies">
+                  <AccordionTrigger className="flex items-center">
+                    <Cpu className="mr-2" /> Technologies
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    {renderAccordionContent('Technologies', occupationWithAPOItems.technologies, 'technologies')}
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
