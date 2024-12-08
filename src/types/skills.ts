@@ -23,6 +23,17 @@ export interface SkillTransferability {
   }>;
 }
 
+export interface Skill {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  current_level: number;
+  required_level: number;
+  importance: number;
+  priority?: 'high' | 'medium' | 'low';
+}
+
 export interface SkillCluster {
   id: string;
   name: string;
