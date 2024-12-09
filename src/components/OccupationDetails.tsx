@@ -22,6 +22,7 @@ import EducationRequirements from './education/EducationRequirements';
 import CareerProgressionTab from './career-progression/CareerProgressionTab';
 import { WorkEnvironmentTab } from './work-environment/WorkEnvironmentTab';
 import { AutomationRiskTab } from './automation-risk/AutomationRiskTab';
+import SkillsContainer from './skills/SkillsContainer';
 
 const convertToAPOItem = (item: Task | Skill | WorkActivity | Technology | Knowledge | Ability): APOItem => {
   const value = 'level' in item && item.level !== undefined 
@@ -236,6 +237,10 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
             <Cpu className="h-4 w-4 mr-2" />
             Automation
           </TabsTrigger>
+          <TabsTrigger value="skills">
+            <Brain className="h-4 w-4 mr-2" />
+            Skills
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="apo">
@@ -387,6 +392,10 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
               </>
             )}
           </div>
+        </TabsContent>
+
+        <TabsContent value="skills">
+          <SkillsContainer occupationId={occupation.code} userId="user123" />
         </TabsContent>
       </Tabs>
     </div>

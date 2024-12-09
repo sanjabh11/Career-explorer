@@ -1,103 +1,185 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
-  Slider,
-  Button,
-  Paper,
+  CircularProgress,
   Grid,
+  Paper,
   Rating,
+  Slider,
+  Alert,
+  Chip,
+  LinearProgress,
   Tooltip
 } from '@mui/material';
 import { Skill } from '../../types/skills';
+import SkillsService from '../../services/SkillsService';
 
-interface SkillAssessmentProps {
-  skill: Skill;
-  onAssessmentComplete: (skillId: string, level: number) => void;
+interface SkillsAssessmentProps {
+  occupationId: string;
+  userId: string;
 }
 
-const proficiencyLevels = [
-  { value: 1, label: 'Novice', description: 'Basic understanding, needs guidance' },
-  { value: 2, label: 'Advanced Beginner', description: 'Can perform with some supervision' },
-  { value: 3, label: 'Competent', description: 'Works independently on routine tasks' },
-  { value: 4, label: 'Proficient', description: 'Handles complex situations well' },
-  { value: 5, label: 'Expert', description: 'Deep understanding, can teach others' }
-];
+const SkillsAssessment: React.FC<SkillsAssessmentProps> = ({ occupationId, userId }) => {
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [assessments, setAssessments] = useState<Record<string, { level: number; confidence: number }>>({});
 
-const SkillAssessment: React.FC<SkillAssessmentProps> = ({
-  skill,
-  onAssessmentComplete
-}) => {
-  const [currentLevel, setCurrentLevel] = useState<number>(skill.current_level);
-  const [confidence, setConfidence] = useState<number>(3);
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const [requiredSkills, userSkills] = await Promise.all([
+          SkillsService.getSkillsForOccupation(occupationId),
+          SkillsService.getUserSkills(userId)
+        ]);
 
-  const handleLevelChange = (event: Event, newValue: number | number[]) => {
-    setCurrentLevel(newValue as number);
+        setSkills(requiredSkills);
+        const existingAssessments: Record<string, { level: number; confidence: number }> = {};
+        // Convert user skills record to assessments
+        Object.entries(userSkills).forEach(([skillId, assessment]) => {
+          existingAssessments[skillId] = {
+            level: assessment.level || 0,
+            confidence: assessment.confidence || 0
+          };
+        });
+        setAssessments(existingAssessments);
+      } catch (error) {
+        console.error('Error fetching skills:', error);
+        setError('Failed to load skills data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInitialData();
+  }, [occupationId, userId]);
+
+  const handleAssessment = async (skillId: string, level: number, confidence: number) => {
+    try {
+      await SkillsService.assessSkill(userId, skillId, { level, confidence });
+      setAssessments(prev => ({
+        ...prev,
+        [skillId]: { level, confidence }
+      }));
+    } catch (err) {
+      console.error('Error saving assessment:', err);
+      setError('Failed to save assessment. Please try again.');
+    }
   };
 
-  const handleSubmit = () => {
-    onAssessmentComplete(skill.id, currentLevel);
+  const getSkillGapColor = (current: number, required: number) => {
+    const gap = required - current;
+    if (gap <= 0) return 'success.main';
+    if (gap <= 2) return 'warning.main';
+    return 'error.main';
   };
 
-  const getCurrentLevelDescription = () => {
-    const level = proficiencyLevels.find(l => l.value === currentLevel);
-    return level ? level.description : '';
-  };
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return <Alert severity="error">{error}</Alert>;
+  }
 
   return (
-    <Paper sx={{ p: 3, mb: 2 }}>
+    <Box>
       <Typography variant="h6" gutterBottom>
-        {skill.name}
+        Skills Assessment
       </Typography>
-      <Typography variant="body2" color="text.secondary" paragraph>
-        {skill.description}
+      <Typography variant="body2" color="textSecondary" paragraph>
+        Assess your proficiency level for each required skill. Your assessment helps us provide personalized recommendations.
       </Typography>
 
-      <Box sx={{ mt: 4 }}>
-        <Typography gutterBottom>Current Proficiency Level</Typography>
-        <Slider
-          value={currentLevel}
-          onChange={handleLevelChange}
-          step={1}
-          marks={proficiencyLevels.map(level => ({
-            value: level.value,
-            label: level.label
-          }))}
-          min={1}
-          max={5}
-          valueLabelDisplay="auto"
-        />
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          {getCurrentLevelDescription()}
-        </Typography>
-      </Box>
+      <Grid container spacing={3}>
+        {skills.map((skill) => {
+          const assessment = assessments[skill.id] || { level: 0, confidence: 0 };
+          const gapColor = getSkillGapColor(assessment.level, skill.required_level);
 
-      <Box sx={{ mt: 4 }}>
-        <Typography gutterBottom>How confident are you in this assessment?</Typography>
-        <Rating
-          value={confidence}
-          onChange={(event, newValue) => {
-            setConfidence(newValue || 3);
-          }}
-          max={5}
-        />
-      </Box>
+          return (
+            <Grid item xs={12} key={skill.id}>
+              <Paper elevation={2} sx={{ p: 2 }}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
+                      <Typography variant="subtitle1" fontWeight="bold">
+                        {skill.name}
+                      </Typography>
+                      <Chip 
+                        label={skill.category} 
+                        size="small" 
+                        color="primary" 
+                        variant="outlined" 
+                      />
+                    </Box>
+                    <Typography variant="body2" color="textSecondary" paragraph>
+                      {skill.description}
+                    </Typography>
+                  </Grid>
 
-      <Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between' }}>
-        <Typography variant="body2" color="text.secondary">
-          Required level: {skill.required_level}
-        </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleSubmit}
-          disabled={currentLevel === skill.current_level}
-        >
-          Save Assessment
-        </Button>
-      </Box>
-    </Paper>
+                  <Grid item xs={12} md={6}>
+                    <Typography gutterBottom>Current Proficiency Level</Typography>
+                    <Slider
+                      value={assessment.level}
+                      min={0}
+                      max={5}
+                      step={1}
+                      marks
+                      onChange={(_, value) => handleAssessment(skill.id, value as number, assessment.confidence)}
+                      valueLabelDisplay="auto"
+                      valueLabelFormat={(value) => `Level ${value}`}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Typography gutterBottom>Confidence in Assessment</Typography>
+                    <Rating
+                      value={assessment.confidence}
+                      onChange={(_, value) => handleAssessment(skill.id, assessment.level, value || 0)}
+                      max={3}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Box display="flex" alignItems="center" gap={2}>
+                      <Typography variant="body2">Skill Gap:</Typography>
+                      <Box flexGrow={1}>
+                        <Tooltip title={`Required Level: ${skill.required_level}`}>
+                          <LinearProgress
+                            variant="determinate"
+                            value={(assessment.level / skill.required_level) * 100}
+                            sx={{ 
+                              height: 10, 
+                              borderRadius: 5,
+                              bgcolor: 'grey.200',
+                              '& .MuiLinearProgress-bar': {
+                                bgcolor: gapColor
+                              }
+                            }}
+                          />
+                        </Tooltip>
+                      </Box>
+                    </Box>
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Typography variant="body2" color="textSecondary">
+                      Required Level: {skill.required_level} | Importance: {skill.importance}%
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
+          );
+        })}
+      </Grid>
+    </Box>
   );
 };
 
-export default SkillAssessment;
+export default SkillsAssessment;

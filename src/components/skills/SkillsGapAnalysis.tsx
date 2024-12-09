@@ -38,13 +38,13 @@ const SkillsGapAnalysis: React.FC<SkillsGapAnalysisProps> = ({
         // Calculate gaps
         const gaps = requiredSkills.map(requiredSkill => {
           const currentSkill = currentSkills.find(s => s.id === requiredSkill.id);
-          const currentLevel = currentSkill ? currentSkill.current_level : 0;
+          const currentLevel = currentSkill?.current_level || 0;
           const gap = requiredSkill.required_level - currentLevel;
           
           return {
             skill: requiredSkill,
             gap: Math.max(0, gap),
-            priority: getPriority(gap, requiredSkill.importance)
+            priority: getPriority(gap, requiredSkill.importance || 0)
           };
         });
 
@@ -122,7 +122,7 @@ const SkillsGapAnalysis: React.FC<SkillsGapAnalysisProps> = ({
                   <Tooltip title={`Gap: ${gap} levels`}>
                     <LinearProgress
                       variant="determinate"
-                      value={(skill.current_level / skill.required_level) * 100}
+                      value={((skill.current_level || 0) / skill.required_level) * 100}
                       sx={{ height: 8, borderRadius: 4 }}
                     />
                   </Tooltip>

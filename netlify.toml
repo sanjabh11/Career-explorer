@@ -5,11 +5,16 @@
 
 [dev]
   command = "npm start"
-  port = 8888
-  targetPort = 3000
+  port = 3000
+  targetPort = 8888
   publish = "build"
-  framework = "#custom"
+  jwtRolePath = "app_metadata.authorization.roles"
   autoLaunch = true
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
 
 [[redirects]]
   from = "/*"
@@ -25,3 +30,6 @@
   for = "/*"
     [headers.values]
     Access-Control-Allow-Origin = "*"
+
+[functions]
+  node_bundler = "esbuild"

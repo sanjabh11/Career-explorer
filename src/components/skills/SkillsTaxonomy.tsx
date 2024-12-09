@@ -29,7 +29,7 @@ const SkillsTaxonomy: React.FC<{ occupationId: string }> = ({ occupationId }) =>
         // Convert to array format
         const categories = Object.entries(categorizedSkills).map(([name, skills]) => ({
           name,
-          skills: skills.sort((a, b) => b.importance - a.importance)
+          skills: skills.sort((a, b) => (b.importance || 0) - (a.importance || 0))
         }));
 
         setSkillCategories(categories);
@@ -83,7 +83,7 @@ const SkillsTaxonomy: React.FC<{ occupationId: string }> = ({ occupationId }) =>
                     >
                       <Box
                         sx={{
-                          width: `${skill.importance * 100}%`,
+                          width: `${(skill.importance || 0) * 100}%`,
                           height: '100%',
                           bgcolor: 'primary.main',
                           borderRadius: 2,
