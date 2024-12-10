@@ -1,14 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import SkillsService from '../../services/SkillsService';
 import { Box, CircularProgress, Typography, Grid, Modal, TextField } from '@mui/material';
-
-interface Skill {
-  id: string;
-  name: string;
-  description: string;
-  importance?: number;
-  category: string;
-}
+import SkillsGapAnalysis from './SkillsGapAnalysis';
+import { Skill } from '../../types/skills';
 
 interface Category {
   name: string;
@@ -21,13 +15,15 @@ const SkillsTaxonomy: React.FC<{ occupationId: string }> = ({ occupationId }) =>
   const [skillCategories, setSkillCategories] = useState<Category[]>([]);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [userSkills, setUserSkills] = useState<Skill[]>([]);
 
   useEffect(() => {
     const fetchSkills = async () => {
       try {
         const skills: Skill[] = await SkillsService.getSkillsForOccupation(occupationId);
-        console.log('Fetched Skills:', skills); // Log the fetched skills
-        // Group skills by category
+        const userSkills: Skill[] = await SkillsService.getUserSkills(occupationId); 
+        setUserSkills(userSkills);
+        console.log('Fetched Skills:', skills);
         const categorizedSkills = skills.reduce((acc: { [key: string]: Skill[] }, skill) => {
           if (!acc[skill.category]) {
             acc[skill.category] = [];
@@ -35,9 +31,6 @@ const SkillsTaxonomy: React.FC<{ occupationId: string }> = ({ occupationId }) =>
           acc[skill.category].push(skill);
           return acc;
         }, {});
-
-        // Log categorized skills
-        console.log('Categorized Skills:', categorizedSkills);
 
         const categories = Object.entries(categorizedSkills).map(([name, skills]) => ({
           name,
@@ -68,7 +61,6 @@ const SkillsTaxonomy: React.FC<{ occupationId: string }> = ({ occupationId }) =>
     setSkillCategories(prevCategories => {
       const newCategories = [...prevCategories];
       newCategories[index].expanded = !newCategories[index].expanded;
-      console.log(`Toggled category: ${newCategories[index].name}, Expanded: ${newCategories[index].expanded}`);
       return newCategories;
     });
   };
@@ -77,8 +69,9 @@ const SkillsTaxonomy: React.FC<{ occupationId: string }> = ({ occupationId }) =>
     category.skills.filter(skill => skill.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  console.log(`Search Term: ${searchTerm}`);
-  console.log(`Filtered Skills: ${filteredSkills.map(skill => skill.name)}`);
+  if (loading) {
+    return <CircularProgress />;
+  }
 
   return (
     <Box sx={{ p: 2 }}>
@@ -88,32 +81,25 @@ const SkillsTaxonomy: React.FC<{ occupationId: string }> = ({ occupationId }) =>
         fullWidth
         onChange={(e) => setSearchTerm(e.target.value)}
       />
-      {loading ? (
-        <CircularProgress />
-      ) : (
-        <Grid container spacing={2}>
-          {skillCategories.map((category, index) => (
-            <Grid item xs={12} key={category.name}>
-              <Typography variant="h6" onClick={() => handleToggleCategory(index)}>
-                {category.name} {category.expanded ? '▼' : '▲'}
-              </Typography>
-              {category.expanded && (
-                <Box>
-                  {category.skills.filter(skill => skill.name.toLowerCase().includes(searchTerm.toLowerCase())).map(skill => (
-                    <Box key={skill.id} onClick={() => handleSkillClick(skill)}>
-                      <Typography variant="subtitle1">{skill.name}</Typography>
-                    </Box>
-                  ))}
-                  {category.skills.filter(skill => !skill.name.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 && (
-                    <Typography variant="body2">No matching skills found in this category.</Typography>
-                  )}
-                </Box>
-              )}
-              {filteredSkills.length === 0 && <Typography>No skills found.</Typography>}
-            </Grid>
-          ))}
-        </Grid>
-      )}
+      <Grid container spacing={2}>
+        {skillCategories.map((category, index) => (
+          <Grid item xs={12} key={category.name}>
+            <Typography variant="h6" onClick={() => handleToggleCategory(index)}>
+              {category.name} {category.expanded ? '▼' : '▲'}
+            </Typography>
+            {category.expanded && (
+              <Box>
+                {category.skills.filter(skill => skill.name.toLowerCase().includes(searchTerm.toLowerCase())).map(skill => (
+                  <Box key={skill.id} onClick={() => handleSkillClick(skill)}>
+                    <Typography variant="subtitle1">{skill.name}</Typography>
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Grid>
+        ))}
+      </Grid>
+      <SkillsGapAnalysis userSkills={userSkills} requiredSkills={filteredSkills} />
       <Modal open={!!selectedSkill} onClose={handleCloseModal}>
         <Box sx={{ p: 4, bgcolor: 'white', borderRadius: 2 }}>
           {selectedSkill && (
@@ -121,7 +107,6 @@ const SkillsTaxonomy: React.FC<{ occupationId: string }> = ({ occupationId }) =>
               <Typography variant="h6">{selectedSkill.name}</Typography>
               <Typography variant="body2">{selectedSkill.description}</Typography>
               <Typography variant="body2">Importance: {selectedSkill.importance}</Typography>
-              {/* Add related occupations and training resources here */}
             </Box>
           )}
         </Box>

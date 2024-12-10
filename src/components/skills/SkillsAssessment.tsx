@@ -99,7 +99,8 @@ const SkillsAssessment: React.FC<SkillsAssessmentProps> = ({ occupationId, userI
       <Grid container spacing={3}>
         {skills.map((skill) => {
           const assessment = assessments[skill.id] || { level: 0, confidence: 0 };
-          const gapColor = getSkillGapColor(assessment.level, skill.required_level);
+          const gapColor = getSkillGapColor(assessment.level || 0, skill.required_level || 0);
+          const tooltipTitle = `Required Level: ${skill.required_level}`;
 
           return (
             <Grid item xs={12} key={skill.id}>
@@ -149,10 +150,10 @@ const SkillsAssessment: React.FC<SkillsAssessmentProps> = ({ occupationId, userI
                     <Box display="flex" alignItems="center" gap={2}>
                       <Typography variant="body2">Skill Gap:</Typography>
                       <Box flexGrow={1}>
-                        <Tooltip title={`Required Level: ${skill.required_level}`}>
+                        <Tooltip title={tooltipTitle}>
                           <LinearProgress
                             variant="determinate"
-                            value={(assessment.level / skill.required_level) * 100}
+                            value={(assessment.level / (skill.required_level || 0)) * 100}
                             sx={{ 
                               height: 10, 
                               borderRadius: 5,

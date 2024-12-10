@@ -34,8 +34,8 @@ interface SkillsProgressProps {
 }
 
 interface UserSkill {
-  level: number;
-  confidence: number;
+  level?: number;
+  confidence?: number;
   lastUpdated?: string;
 }
 
@@ -71,21 +71,16 @@ const SkillsProgress: React.FC<SkillsProgressProps> = ({
 
         // Combine user skills with required skills to create progress data
         const progress = requiredSkills.map(requiredSkill => {
-          const userSkill = (userSkills[requiredSkill.id] || { 
-            level: 0, 
-            confidence: 0,
-            lastUpdated: new Date().toISOString()
-          }) as UserSkill;
-
+          const userSkill: UserSkill = userSkills.find(skill => skill.id === requiredSkill.id) || { level: 0, confidence: 0, lastUpdated: new Date().toISOString() };
           return {
             skillId: requiredSkill.id,
             skillName: requiredSkill.name,
-            currentLevel: userSkill.level,
-            targetLevel: requiredSkill.required_level,
-            confidence: userSkill.confidence,
-            lastUpdated: userSkill.lastUpdated,
+            currentLevel: userSkill.level ?? 0,
+            targetLevel: requiredSkill.required_level ?? 0,
+            confidence: userSkill.confidence ?? 0,
+            lastUpdated: userSkill.lastUpdated ?? new Date().toISOString(),
             category: requiredSkill.category,
-            importance: requiredSkill.importance || 0
+            importance: requiredSkill.importance ?? 0,
           };
         });
 

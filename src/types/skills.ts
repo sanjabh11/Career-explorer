@@ -27,13 +27,13 @@ export interface Skill {
   id: string;
   name: string;
   description: string;
-  category: string;
-  required_level: number;
-  current_level?: number;
-  confidence?: number;
   importance?: number;
-  proficiency_criteria?: ProficiencyCriteria[];
-  learning_resources?: LearningResource[];
+  category: string;
+  level?: number;          // User's current skill level
+  confidence?: number;     // User's confidence in the skill
+  required_level?: number; // Required level for the skill
+  current_level?: number;  // Current level for the skill
+  lastUpdated?: string;    // Add lastUpdated property
 }
 
 export interface ProficiencyCriteria {

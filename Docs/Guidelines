@@ -1,0 +1,11 @@
+# Key Guidelines for Code Additions and Fixes
+
+1. **Enhance Working Code**: Always enhance the existing working code to the next level without disrupting its current functionality.
+
+2. **UI Updates**: Ensure to update or implement the new or existing UI in every phase, allowing for testing as progress is made.
+
+3. **File Management**: Clearly state the reasons for adding or deleting any files in a single file.
+
+4. **Use Actual Data**: Always pull actual data from the O*NET source website using the API; avoid using dummy or mock data.
+
+5. **Codebase Review**: Before fixing issues, review the complete codebase to understand the context and ensure appropriate changes are made.

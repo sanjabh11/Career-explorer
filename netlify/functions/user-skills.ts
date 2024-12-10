@@ -1,12 +1,26 @@
 import { Handler } from '@netlify/functions';
-import { MongoClient } from 'mongodb';
 
 const handler: Handler = async (event) => {
-  // Only allow GET method
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Content-Type': 'application/json'
+  };
+
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 204,
+      headers,
+      body: ''
+    };
+  }
+
   if (event.httpMethod !== 'GET') {
     return {
       statusCode: 405,
-      body: JSON.stringify({ error: 'Method not allowed' }),
+      headers,
+      body: JSON.stringify({ error: 'Method Not Allowed' })
     };
   }
 
@@ -16,6 +30,7 @@ const handler: Handler = async (event) => {
     if (!userId) {
       return {
         statusCode: 400,
+        headers,
         body: JSON.stringify({ error: 'Missing userId parameter' }),
       };
     }
@@ -42,12 +57,14 @@ const handler: Handler = async (event) => {
 
     return {
       statusCode: 200,
+      headers,
       body: JSON.stringify(skills),
     };
   } catch (error) {
     console.error('Error fetching user skills:', error);
     return {
       statusCode: 500,
+      headers,
       body: JSON.stringify({ error: 'Internal server error' }),
     };
   }

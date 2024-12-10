@@ -30,13 +30,24 @@ class SkillsService {
     }
   }
 
-  static async getUserSkills(userId: string): Promise<Record<string, { level: number; confidence: number }>> {
+  static async getUserSkills(userId: string): Promise<Skill[]> {
     try {
-      const storedSkills = localStorage.getItem(`user_skills_${userId}`);
-      return storedSkills ? JSON.parse(storedSkills) : {};
+      const response = await fetch(`http://localhost:3000/api/userSkills`);
+      const data = await response.json();
+      return data.map((skill: any) => ({
+        id: skill.id,
+        name: skill.name,
+        description: skill.description,
+        importance: skill.importance,
+        category: skill.category,
+        level: skill.level,
+        confidence: skill.confidence,
+        required_level: skill.required_level,
+        current_level: skill.current_level,
+      }));
     } catch (error) {
       console.error('Error fetching user skills:', error);
-      return {};
+      return [];
     }
   }
 
@@ -67,8 +78,8 @@ class SkillsService {
       ]);
 
       return requiredSkills.map(requiredSkill => {
-        const userSkill = userSkills[requiredSkill.id];
-        const gap = requiredSkill.required_level - (userSkill?.level || 0);
+        const userSkill = userSkills.find(skill => skill.id === requiredSkill.id);
+        const gap = (requiredSkill.required_level || 0) - (userSkill?.level || 0);
         return {
           skill: requiredSkill,
           currentLevel: userSkill?.level || 0,
