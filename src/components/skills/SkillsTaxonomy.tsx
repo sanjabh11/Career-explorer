@@ -1,22 +1,32 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, CircularProgress, Grid } from '@mui/material';
 import SkillsService from '../../services/SkillsService';
-import { Skill } from '../../types/skills';
+import { Box, CircularProgress, Typography, Grid, Modal, TextField } from '@mui/material';
 
-interface SkillCategory {
+interface Skill {
+  id: string;
+  name: string;
+  description: string;
+  importance?: number;
+  category: string;
+}
+
+interface Category {
   name: string;
   skills: Skill[];
+  expanded: boolean;
 }
 
 const SkillsTaxonomy: React.FC<{ occupationId: string }> = ({ occupationId }) => {
   const [loading, setLoading] = useState(true);
-  const [skillCategories, setSkillCategories] = useState<SkillCategory[]>([]);
+  const [skillCategories, setSkillCategories] = useState<Category[]>([]);
+  const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const fetchSkills = async () => {
       try {
-        const skills = await SkillsService.getSkillsForOccupation(occupationId);
-        
+        const skills: Skill[] = await SkillsService.getSkillsForOccupation(occupationId);
+        console.log('Fetched Skills:', skills); // Log the fetched skills
         // Group skills by category
         const categorizedSkills = skills.reduce((acc: { [key: string]: Skill[] }, skill) => {
           if (!acc[skill.category]) {
@@ -26,10 +36,13 @@ const SkillsTaxonomy: React.FC<{ occupationId: string }> = ({ occupationId }) =>
           return acc;
         }, {});
 
-        // Convert to array format
+        // Log categorized skills
+        console.log('Categorized Skills:', categorizedSkills);
+
         const categories = Object.entries(categorizedSkills).map(([name, skills]) => ({
           name,
-          skills: skills.sort((a, b) => (b.importance || 0) - (a.importance || 0))
+          skills: skills.sort((a, b) => (b.importance || 0) - (a.importance || 0)),
+          expanded: false,
         }));
 
         setSkillCategories(categories);
@@ -43,60 +56,76 @@ const SkillsTaxonomy: React.FC<{ occupationId: string }> = ({ occupationId }) =>
     fetchSkills();
   }, [occupationId]);
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const handleSkillClick = (skill: Skill) => {
+    setSelectedSkill(skill);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedSkill(null);
+  };
+
+  const handleToggleCategory = (index: number) => {
+    setSkillCategories(prevCategories => {
+      const newCategories = [...prevCategories];
+      newCategories[index].expanded = !newCategories[index].expanded;
+      console.log(`Toggled category: ${newCategories[index].name}, Expanded: ${newCategories[index].expanded}`);
+      return newCategories;
+    });
+  };
+
+  const filteredSkills = skillCategories.flatMap(category => 
+    category.skills.filter(skill => skill.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  console.log(`Search Term: ${searchTerm}`);
+  console.log(`Filtered Skills: ${filteredSkills.map(skill => skill.name)}`);
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h5" gutterBottom>
-        Skills Taxonomy
-      </Typography>
-      <Grid container spacing={3}>
-        {skillCategories.map((category) => (
-          <Grid item xs={12} md={6} key={category.name}>
-            <Box sx={{ bgcolor: 'background.paper', p: 2, borderRadius: 1 }}>
-              <Typography variant="h6" gutterBottom>
-                {category.name}
+      <TextField
+        label="Search Skills"
+        variant="outlined"
+        fullWidth
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+      {loading ? (
+        <CircularProgress />
+      ) : (
+        <Grid container spacing={2}>
+          {skillCategories.map((category, index) => (
+            <Grid item xs={12} key={category.name}>
+              <Typography variant="h6" onClick={() => handleToggleCategory(index)}>
+                {category.name} {category.expanded ? '▼' : '▲'}
               </Typography>
-              {category.skills.map((skill) => (
-                <Box key={skill.id} sx={{ mb: 2 }}>
-                  <Typography variant="subtitle1">{skill.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {skill.description}
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                    <Typography variant="caption" sx={{ mr: 1 }}>
-                      Importance:
-                    </Typography>
-                    <Box
-                      sx={{
-                        width: '100%',
-                        height: 4,
-                        bgcolor: 'grey.200',
-                        borderRadius: 2,
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: `${(skill.importance || 0) * 100}%`,
-                          height: '100%',
-                          bgcolor: 'primary.main',
-                          borderRadius: 2,
-                        }}
-                      />
+              {category.expanded && (
+                <Box>
+                  {category.skills.filter(skill => skill.name.toLowerCase().includes(searchTerm.toLowerCase())).map(skill => (
+                    <Box key={skill.id} onClick={() => handleSkillClick(skill)}>
+                      <Typography variant="subtitle1">{skill.name}</Typography>
                     </Box>
-                  </Box>
+                  ))}
+                  {category.skills.filter(skill => !skill.name.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 && (
+                    <Typography variant="body2">No matching skills found in this category.</Typography>
+                  )}
                 </Box>
-              ))}
+              )}
+              {filteredSkills.length === 0 && <Typography>No skills found.</Typography>}
+            </Grid>
+          ))}
+        </Grid>
+      )}
+      <Modal open={!!selectedSkill} onClose={handleCloseModal}>
+        <Box sx={{ p: 4, bgcolor: 'white', borderRadius: 2 }}>
+          {selectedSkill && (
+            <Box>
+              <Typography variant="h6">{selectedSkill.name}</Typography>
+              <Typography variant="body2">{selectedSkill.description}</Typography>
+              <Typography variant="body2">Importance: {selectedSkill.importance}</Typography>
+              {/* Add related occupations and training resources here */}
             </Box>
-          </Grid>
-        ))}
-      </Grid>
+          )}
+        </Box>
+      </Modal>
     </Box>
   );
 };

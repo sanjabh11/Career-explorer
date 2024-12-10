@@ -6,6 +6,7 @@ import TimelineIcon from '@mui/icons-material/Timeline';
 import SkillsAssessment from './SkillsAssessment';
 import TrainingRecommendations from './TrainingRecommendations';
 import SkillsProgress from './SkillsProgress';
+import SkillsTaxonomy from './SkillsTaxonomy';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -76,6 +77,12 @@ const SkillsContainer: React.FC<SkillsContainerProps> = ({
               id="skills-tab-2"
               aria-controls="skills-tabpanel-2"
             />
+            <Tab 
+              icon={<TimelineIcon />} 
+              label="Skills Taxonomy" 
+              id="skills-tab-3"
+              aria-controls="skills-tabpanel-3"
+            />
           </Tabs>
         </Box>
 
@@ -113,6 +120,10 @@ const SkillsContainer: React.FC<SkillsContainerProps> = ({
             </Typography>
           </Box>
           <SkillsProgress occupationId={occupationId} userId={userId} />
+        </TabPanel>
+
+        <TabPanel value={activeTab} index={3}>
+          <SkillsTaxonomy occupationId={occupationId} />
         </TabPanel>
       </Box>
     </Paper>
