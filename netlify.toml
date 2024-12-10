@@ -5,8 +5,8 @@
 
 [dev]
   command = "npm start"
-  port = 3000
-  targetPort = 8888
+  port = 8888
+  targetPort = 3000
   publish = "build"
   jwtRolePath = "app_metadata.authorization.roles"
   autoLaunch = true

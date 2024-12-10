@@ -2,8 +2,8 @@ import { Handler } from '@netlify/functions';
 import axios from 'axios';
 
 const ONET_BASE_URL = 'https://services.onetcenter.org/ws/online';
-const ONET_USERNAME = process.env.ONET_USERNAME || 'ignite_consulting';
-const ONET_PASSWORD = process.env.ONET_PASSWORD || '4675rxg';
+const ONET_USERNAME = process.env.ONET_USERNAME;
+const ONET_PASSWORD = process.env.ONET_PASSWORD;
 
 const handler: Handler = async (event) => {
   const headers = {

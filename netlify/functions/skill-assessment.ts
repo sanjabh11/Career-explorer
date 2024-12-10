@@ -1,5 +1,4 @@
 import { Handler } from '@netlify/functions';
-import { MongoClient } from 'mongodb';
 
 const handler: Handler = async (event) => {
   // Only allow POST method
@@ -21,25 +20,10 @@ const handler: Handler = async (event) => {
       };
     }
 
-    // Connect to MongoDB (you'll need to set up MONGODB_URI in your Netlify environment variables)
-    const client = await MongoClient.connect(process.env.MONGODB_URI || '');
-    const db = client.db('career-explorer');
-    const collection = db.collection('skill-assessments');
-
-    // Save or update the assessment
-    await collection.updateOne(
-      { userId, skillId },
-      {
-        $set: {
-          level,
-          confidence,
-          updatedAt: new Date(),
-        },
-      },
-      { upsert: true }
-    );
-
-    await client.close();
+    // Store the assessment in local storage (this is a placeholder for actual implementation)
+    const assessments = JSON.parse(localStorage.getItem(`user_skills_${userId}`) || '{}');
+    assessments[skillId] = { level, confidence, lastUpdated: new Date().toISOString() };
+    localStorage.setItem(`user_skills_${userId}`, JSON.stringify(assessments));
 
     return {
       statusCode: 200,
