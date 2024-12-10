@@ -33,21 +33,16 @@ export class AutomationDataService {
     }
 
     try {
-      const response = await axios.get<AutomationTrend[]>(`${this.baseUrl}/historical-data`, {
-        params: {
-          occupation,
-          startDate: timeframe.startDate.toISOString(),
-          endDate: timeframe.endDate.toISOString()
-        }
-      });
+      const response = await fetch(`http://localhost:8888/.netlify/functions/historical-data?occupation=${occupation}&startDate=${timeframe.startDate.toISOString()}&endDate=${timeframe.endDate.toISOString()}`);
+      const data = await response.json();
 
-      const data = response.data.map((item: AutomationTrend) => ({
+      const formattedData = data.map((item: AutomationTrend) => ({
         ...item,
         date: new Date(item.date)
       }));
 
-      this.cache.set(cacheKey, { data, timestamp: Date.now() });
-      return data;
+      this.cache.set(cacheKey, { data: formattedData, timestamp: Date.now() });
+      return formattedData;
     } catch (error) {
       console.error('Error collecting historical data:', error);
       return [];
@@ -75,12 +70,8 @@ export class AutomationDataService {
     }
 
     try {
-      const response = await axios.get<ResearchData[]>(`${this.baseUrl}/research-data`);
-      
-      const data = response.data.map((item: ResearchData) => ({
-        ...item,
-        date: new Date(item.date)
-      }));
+      const response = await fetch('http://localhost:8888/.netlify/functions/research-data');
+      const data = await response.json();
 
       this.cache.set(cacheKey, { data, timestamp: Date.now() });
       return data;

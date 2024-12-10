@@ -32,7 +32,7 @@ class SkillsService {
 
   static async getUserSkills(userId: string): Promise<Skill[]> {
     try {
-      const response = await fetch(`http://localhost:3000/api/userSkills`);
+      const response = await fetch(`${API_BASE_URL}/user-skills`);
       const data = await response.json();
       return data.map((skill: any) => ({
         id: skill.id,
