@@ -22,21 +22,6 @@ import {
   calculateAbilityTechImpact,
 } from './calculationHelpers';
 
-const findBestMatch = (text: string, categories: Record<string, number>): number => {
-  let bestMatch = 0;
-  let bestScore = 0;
-
-  for (const [key, value] of Object.entries(categories)) {
-    const score = calculateSimilarity(text, key);
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = value;
-    }
-  }
-
-  return bestMatch;
-};
-
 const calculateSimilarity = (str1: string, str2: string): number => {
   const words1 = str1.toLowerCase().split(/\s+/);
   const words2 = str2.toLowerCase().split(/\s+/);

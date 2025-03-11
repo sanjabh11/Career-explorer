@@ -43,7 +43,7 @@ const analyzeTrends = (data: AutomationTrend[]): { [key: string]: 'increasing' |
   });
 
   return Object.entries(trends).reduce((acc, [factor, values]) => {
-    const slope = calculateTrendSlope(values.map((v, i) => ({ date: new Date(), apoScore: v, factors: [], confidence: 0, industryImpact: 0, technologyAdoption: 0 })));
+    const slope = calculateTrendSlope(values.map((v) => ({ date: new Date(), apoScore: v, factors: [], confidence: 0, industryImpact: 0, technologyAdoption: 0 })));
     acc[factor] = slope > 0.1 ? 'increasing' : slope < -0.1 ? 'decreasing' : 'stable';
     return acc;
   }, {} as { [key: string]: 'increasing' | 'decreasing' | 'stable' });

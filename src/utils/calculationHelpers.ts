@@ -79,7 +79,7 @@ export const calculateAbilityComplexity = (abilities: Ability[]): number => {
 
 export const calculateAbilityRepetitiveness = (abilities: Ability[]): number => {
   if (!abilities.length) return 0;
-  return abilities.reduce((sum, ability) => {
+  return abilities.reduce((sum, _) => {
     // Physical abilities tend to be more repetitive
     return sum + 0.7;
   }, 0) / abilities.length;
@@ -87,7 +87,7 @@ export const calculateAbilityRepetitiveness = (abilities: Ability[]): number => 
 
 export const calculateAbilityAICollaboration = (abilities: Ability[]): number => {
   if (!abilities.length) return 0;
-  return abilities.reduce((sum, ability) => {
+  return abilities.reduce((sum, _) => {
     // Physical abilities generally have lower AI collaboration
     return sum + 0.3;
   }, 0) / abilities.length;

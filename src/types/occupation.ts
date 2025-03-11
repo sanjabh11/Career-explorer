@@ -105,6 +105,31 @@ export interface OccupationDetails {
   lastUpdated?: Date;
 }
 
+/**
+ * Occupation interface for the Enhanced APO Dashboard
+ * Version 1.0
+ */
+export interface Occupation {
+  id: string;
+  title: string;
+  description: string;
+  code: string;
+  category: string;
+  educationLevel: string;
+  salary: {
+    median: number;
+    range: {
+      min: number;
+      max: number;
+    };
+  };
+  outlook: {
+    growth: number;
+    category: string;
+  };
+  automationRisk: number;
+}
+
 // For Recharts Tooltip
 export interface CustomTooltipProps<TValue, TName> {
   active?: boolean;

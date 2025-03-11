@@ -2,20 +2,20 @@
 	"siteId": "3cd78072-169b-47d1-bd40-315d5c77e165",
 	"geolocation": {
 		"data": {
-			"city": "Shimla",
+			"city": "Chandigarh",
 			"country": {
 				"code": "IN",
 				"name": "India"
 			},
 			"subdivision": {
-				"code": "HP",
-				"name": "Himachal Pradesh"
+				"code": "CH",
+				"name": "Chandigarh"
 			},
 			"timezone": "Asia/Kolkata",
-			"latitude": 31.1034,
-			"longitude": 77.1659,
-			"postalCode": "171001"
+			"latitude": 30.7339,
+			"longitude": 76.7889,
+			"postalCode": "140603"
 		},
-		"timestamp": 1733811934689
+		"timestamp": 1741688617871
 	}
 }

@@ -1,81 +1,113 @@
-A mindmap process flow that illustrates how the final APO% is calculated, including the relevant file names and the data flow from the search engine to the final outcome. Let's break this down step by step:
-mermaid
-Copy Code
+# Enhanced APO Calculation System: AI-Driven Approach
+
+A mindmap process flow that illustrates how the final APO% is calculated using SerpAPI and JinaAPI integration, including the relevant file names and the data flow from the search engine to the final outcome.
+
+```mermaid
 mindmap
-  root((APO Calculation))
+  root((Enhanced APO Calculation))
     Search Input
       src/components/JobTaxonomySelector.tsx
         Search bar
       src/hooks/useDebounce.ts
         Debounce search input
-    API Request
-      src/hooks/useOccupationSearch.ts
-        handleSearch function
+    API Request & Data Collection
       src/services/OnetService.ts
         API call to O*NET
-      netlify/functions/onet-proxy.js
-        Proxy for O*NET API
-    Data Processing
-      src/hooks/useOccupationSearch.ts
-        Process API response
-      src/components/JobTaxonomySelector.tsx
-        Set selectedOccupation
-    APO Calculation
-      src/utils/apoCalculations.ts
-        calculateAPO function
-        getAverageAPO function
-      src/components/JobTaxonomySelector.tsx
-        Calculate overall APO
+      src/services/SerpApiService.ts
+        Research data retrieval
+      src/services/JinaApiService.ts
+        Semantic analysis
+      netlify/functions/api-proxy.js
+        Unified API proxy
+    Data Processing & Fusion
+      src/utils/dataFusion.ts
+        Multi-source integration
+      src/utils/confidenceScoring.ts
+        Reliability metrics
+      src/hooks/useOccupationAnalysis.ts
+        Process combined data
+    Enhanced APO Calculation
+      src/utils/enhancedApoCalculation.ts
+        calculateEnhancedAPO function
+        getTimeProjections function
+        getFactorBreakdown function
+      src/components/analysis/APOProcessor.tsx
+        Calculate comprehensive APO
     Data Visualization
-      src/components/APOChart.tsx
-        Render APO charts
-      src/components/CategoryAccordion.tsx
-        Display category details
-    Final Display
-      src/components/JobTaxonomySelector.tsx
-        Render occupation details
-        Show overall APO
-Now, let's break down the process flow:
-1.	Search Input
-o	File: src/components/JobTaxonomySelector.tsx
-o	The user enters a search term in the search bar.
-o	File: src/hooks/useDebounce.ts
-o	The search input is debounced to prevent excessive API calls.
-2.	API Request
-o	File: src/hooks/useOccupationSearch.ts
-o	The handleSearch function is triggered with the debounced search term.
-o	File: src/services/OnetService.ts
-o	An API call is made to the O*NET database.
-o	File: netlify/functions/onet-proxy.js
-o	The Netlify function acts as a proxy for the O*NET API, handling authentication and CORS issues.
-3.	Data Processing
-o	File: src/hooks/useOccupationSearch.ts
-o	The API response is processed and stored in the component state.
-o	File: src/components/JobTaxonomySelector.tsx
-o	The selectedOccupation state is updated with the chosen occupation data.
-4.	APO Calculation
-o	File: src/utils/apoCalculations.ts
-o	The calculateAPO function calculates the APO for individual items in each category (Tasks, Knowledge, Skills, Abilities, Technologies).
-o	The getAverageAPO function calculates the average APO for each category.
-o	File: src/components/JobTaxonomySelector.tsx
-o	The overall APO is calculated by averaging the APO scores from all categories.
-5.	Data Visualization
-o	File: src/components/APOChart.tsx
-o	APO charts are rendered based on the calculated APO scores.
-o	File: src/components/CategoryAccordion.tsx
-o	Detailed APO information for each category is displayed in accordion sections.
-6.	Final Display
-o	File: src/components/JobTaxonomySelector.tsx
-o	The occupation details are rendered, including the overall APO score and individual category scores.
-Data Flow:
-1.	User enters a search term in JobTaxonomySelector.tsx
-2.	The search term is debounced in useDebounce.ts
-3.	useOccupationSearch.ts triggers an API call via OnetService.ts
-4.	The API request is proxied through onet-proxy.js Netlify function
-5.	The API response is processed in useOccupationSearch.ts
-6.	JobTaxonomySelector.tsx updates the selectedOccupation state
-7.	apoCalculations.ts functions are called to calculate APO scores
-8.	JobTaxonomySelector.tsx calculates the overall APO
-9.	APO data is passed to APOChart.tsx and CategoryAccordion.tsx for visualization
-10.	JobTaxonomySelector.tsx renders the final occupation details with APO scores
-This process ensures that the APO calculation is based on the latest data from the O*NET database and provides a comprehensive overview of the automation potential for the selected occupation.
+      src/components/analysis/EnhancedAPODisplay/
+        Render APO visualizations
+      src/components/analysis/TimeProjectionChart/
+        Display time-based projections
+      src/components/analysis/FactorAnalysis/
+        Show factor breakdown
+    Interactive Analysis
+      src/components/interaction/ScenarioModeling/
+        "What-if" analysis tools
+      src/components/interaction/SkillsPathway/
+        Skills development components
+```
+
+## Enhanced Process Flow
+
+1. **Search Input**
+   - File: `src/components/JobTaxonomySelector.tsx`
+   - The user enters a search term in the search bar.
+   - File: `src/hooks/useDebounce.ts`
+   - The search input is debounced to prevent excessive API calls.
+
+2. **API Request & Data Collection**
+   - File: `src/services/OnetService.ts`
+   - An API call is made to the O*NET database for occupation details.
+   - File: `src/services/SerpApiService.ts`
+   - SerpAPI is queried for current research on automation potential.
+   - File: `src/services/JinaApiService.ts`
+   - JinaAPI performs semantic analysis on occupation descriptions and tasks.
+   - File: `netlify/functions/api-proxy.js`
+   - The Netlify function acts as a unified proxy for all external APIs.
+
+3. **Data Processing & Fusion**
+   - File: `src/utils/dataFusion.ts`
+   - Multiple data sources are integrated with weighted importance.
+   - File: `src/utils/confidenceScoring.ts`
+   - Reliability metrics are calculated based on data source agreement.
+   - File: `src/hooks/useOccupationAnalysis.ts`
+   - The combined data is processed and prepared for APO calculation.
+
+4. **Enhanced APO Calculation**
+   - File: `src/utils/enhancedApoCalculation.ts`
+   - The `calculateEnhancedAPO` function applies ML-driven factor weighting.
+   - The `getTimeProjections` function generates 2, 5, and 10-year forecasts.
+   - The `getFactorBreakdown` function analyzes contributing factors.
+   - File: `src/components/analysis/APOProcessor.tsx`
+   - A comprehensive APO assessment is calculated with confidence intervals.
+
+5. **Data Visualization**
+   - File: `src/components/analysis/EnhancedAPODisplay/`
+   - Enhanced APO visualizations are rendered with confidence indicators.
+   - File: `src/components/analysis/TimeProjectionChart/`
+   - Time-based projections are displayed with key driving factors.
+   - File: `src/components/analysis/FactorAnalysis/`
+   - Detailed factor breakdown is presented with relative importance.
+
+6. **Interactive Analysis**
+   - File: `src/components/interaction/ScenarioModeling/`
+   - Users can explore "what-if" scenarios with different parameters.
+   - File: `src/components/interaction/SkillsPathway/`
+   - Personalized skill development recommendations are provided.
+
+## Data Flow
+
+1. User enters a search term in `JobTaxonomySelector.tsx`
+2. The search term is debounced in `useDebounce.ts`
+3. `useOccupationAnalysis.ts` triggers parallel API calls:
+   - O*NET data via `OnetService.ts`
+   - Research data via `SerpApiService.ts`
+   - Semantic analysis via `JinaApiService.ts`
+4. API requests are proxied through `api-proxy.js` Netlify function
+5. `dataFusion.ts` integrates multiple data sources with confidence scoring
+6. `enhancedApoCalculation.ts` functions calculate comprehensive APO metrics
+7. `APOProcessor.tsx` generates the final APO assessment with projections
+8. Visualization components render the results with interactive elements
+9. Users can explore scenarios and receive personalized recommendations
+
+This enhanced process ensures that the APO calculation is based on the latest research data, semantic analysis, and O*NET information, providing a comprehensive and forward-looking assessment of automation potential.
