@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import axios from 'axios';
 
-// Note: In production, these should be in environment variables
+// SECURITY ISSUE: Hardcoded credentials
 const ONET_USERNAME = process.env.ONET_USERNAME || 'ignite_consulting';
 const ONET_PASSWORD = process.env.ONET_PASSWORD || '4675rxg';
 

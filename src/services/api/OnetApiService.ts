@@ -1,6 +1,6 @@
 /**
  * O*NET API Service
- * Version 1.0
+ * Version 1.2
  * 
  * Service for interacting with the O*NET API to retrieve occupation data,
  * tasks, skills, and other occupation-related information.
@@ -10,268 +10,203 @@ import axios from 'axios';
 import { Occupation } from '../../types/occupation';
 import { OccupationTask } from '../../types/semantic';
 import { Skill } from '../../types/skills';
+import { EnvironmentConfig } from '@/config/environment';
 
 /**
  * Service for interacting with the O*NET API
  */
 export class OnetApiService {
-  private readonly baseUrl: string;
-  private readonly apiKey: string;
-  
-  /**
-   * Constructor for OnetApiService
-   */
+  private readonly config: ReturnType<typeof EnvironmentConfig.prototype.getOnetConfig>;
+  private readonly headers: Headers;
+  private readonly apiBaseUrl: string;
+
   constructor() {
-    this.baseUrl = process.env.REACT_APP_ONET_API_URL || 'https://services.onetcenter.org/ws/';
-    this.apiKey = process.env.REACT_APP_ONET_API_KEY || '';
+    this.config = EnvironmentConfig.getInstance().getOnetConfig();
+    this.headers = this.getAuthHeaders();
+    this.apiBaseUrl = this.config.baseUrl || 'https://services.onetcenter.org/ws/online';
   }
-  
+
+  private getAuthHeaders(): Headers {
+    const authString = Buffer.from(
+      `${this.config.username}:${this.config.password}`
+    ).toString('base64');
+    
+    return new Headers({
+      'Authorization': `Basic ${authString}`,
+      'Accept': 'application/json'
+    });
+  }
+
   /**
-   * Get occupation details by ID
-   * @param occupationId O*NET occupation code
+   * Fetch raw occupation data from O*NET API
+   */
+  public async fetchOccupationData(code: string) {
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/occupations/${code}`, {
+        headers: this.headers
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching occupation data:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get detailed information about an occupation
+   * @param id O*NET occupation code (e.g. "13-1151.00")
    * @returns Occupation details
    */
-  public async getOccupationDetails(occupationId: string): Promise<Occupation> {
+  public async getOccupationDetails(id: string): Promise<Occupation> {
     try {
-      // In a real implementation, this would call the O*NET API
-      // For now, return mock data
+      const response = await fetch(`${this.apiBaseUrl}/occupations/${id}/details`, {
+        headers: this.headers
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch occupation details: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Transform the API response to match the Occupation type
       return {
-        id: occupationId,
-        title: this.getMockTitle(occupationId),
-        description: this.getMockDescription(occupationId),
-        code: occupationId,
-        category: 'Technology',
-        educationLevel: 'Bachelor\'s degree',
+        id,
+        title: data.title || '',
+        description: data.description || '',
+        code: id,
+        category: data.category || '',
+        educationLevel: data.education_requirements || '',
         salary: {
-          median: 85000,
+          median: data.salary?.median || 0,
           range: {
-            min: 65000,
-            max: 120000
+            min: data.salary?.range?.min || 0,
+            max: data.salary?.range?.max || 0
           }
         },
         outlook: {
-          growth: 0.11,
-          category: 'Faster than average'
+          growth: data.outlook?.growth || 0,
+          category: data.outlook?.category || ''
         },
-        automationRisk: 0.65
+        automationRisk: data.automation_risk || 0
       };
     } catch (error) {
       console.error('Error fetching occupation details:', error);
-      throw new Error('Failed to fetch occupation details');
+      throw error;
     }
   }
-  
+
   /**
-   * Get occupation tasks by ID
-   * @param occupationId O*NET occupation code
-   * @returns List of occupation tasks
+   * Get tasks associated with an occupation
+   * @param id O*NET occupation code
+   * @returns Array of occupation tasks
    */
-  public async getOccupationTasks(occupationId: string): Promise<OccupationTask[]> {
+  public async getOccupationTasks(id: string): Promise<OccupationTask[]> {
     try {
-      // In a real implementation, this would call the O*NET API
-      // For now, return mock data
-      return [
-        {
-          id: `${occupationId}-task-1`,
-          description: 'Analyze user needs and software requirements to determine feasibility of design within time and cost constraints.'
-        },
-        {
-          id: `${occupationId}-task-2`,
-          description: 'Design, build, or maintain web sites, using authoring or scripting languages, content creation tools, management tools, and digital media.'
-        },
-        {
-          id: `${occupationId}-task-3`,
-          description: 'Perform or direct web site updates.'
-        },
-        {
-          id: `${occupationId}-task-4`,
-          description: 'Write, design, or edit web page content, or direct others producing content.'
-        },
-        {
-          id: `${occupationId}-task-5`,
-          description: 'Confer with management or development teams to prioritize needs, resolve conflicts, develop content criteria, or choose solutions.'
-        }
-      ];
+      const response = await fetch(`${this.apiBaseUrl}/occupations/${id}/tasks`, {
+        headers: this.headers
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch occupation tasks: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Transform the API response to match the OccupationTask type
+      return Array.isArray(data.tasks) ? data.tasks.map((task: any) => ({
+        id: task.id || `task-${Math.random().toString(36).substr(2, 9)}`,
+        description: task.description || '',
+        category: task.category || 'Core Task',
+        importance: task.importance || 0,
+        frequency: task.frequency || 0
+      })) : [];
     } catch (error) {
       console.error('Error fetching occupation tasks:', error);
-      throw new Error('Failed to fetch occupation tasks');
+      throw error;
     }
   }
-  
+
   /**
-   * Get occupation skills by ID
-   * @param occupationId O*NET occupation code
-   * @returns List of occupation skills
+   * Get skills associated with an occupation
+   * @param id O*NET occupation code
+   * @returns Array of skills
    */
-  public async getOccupationSkills(occupationId: string): Promise<Skill[]> {
+  public async getOccupationSkills(id: string): Promise<Skill[]> {
     try {
-      // In a real implementation, this would call the O*NET API
-      // For now, return mock data
-      return [
-        {
-          id: `${occupationId}-skill-1`,
-          name: 'Programming',
-          category: 'technical',
-          description: 'Writing computer programs for various purposes.'
-        },
-        {
-          id: `${occupationId}-skill-2`,
-          name: 'Critical Thinking',
-          category: 'cognitive',
-          description: 'Using logic and reasoning to identify the strengths and weaknesses of alternative solutions, conclusions, or approaches to problems.'
-        },
-        {
-          id: `${occupationId}-skill-3`,
-          name: 'Active Learning',
-          category: 'cognitive',
-          description: 'Understanding the implications of new information for both current and future problem-solving and decision-making.'
-        },
-        {
-          id: `${occupationId}-skill-4`,
-          name: 'Complex Problem Solving',
-          category: 'cognitive',
-          description: 'Identifying complex problems and reviewing related information to develop and evaluate options and implement solutions.'
-        },
-        {
-          id: `${occupationId}-skill-5`,
-          name: 'Systems Analysis',
-          category: 'technical',
-          description: 'Determining how a system should work and how changes in conditions, operations, and the environment will affect outcomes.'
-        },
-        {
-          id: `${occupationId}-skill-6`,
-          name: 'Communication',
-          category: 'soft',
-          description: 'Talking to others to convey information effectively.'
-        },
-        {
-          id: `${occupationId}-skill-7`,
-          name: 'Judgment and Decision Making',
-          category: 'cognitive',
-          description: 'Considering the relative costs and benefits of potential actions to choose the most appropriate one.'
-        }
-      ];
+      const response = await fetch(`${this.apiBaseUrl}/occupations/${id}/skills`, {
+        headers: this.headers
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch occupation skills: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Transform the API response to match the Skill type
+      return Array.isArray(data.skills) ? data.skills.map((skill: any) => ({
+        id: skill.id || `skill-${Math.random().toString(36).substr(2, 9)}`,
+        name: skill.name || '',
+        description: skill.description || '',
+        category: skill.category || 'Core Skill',
+        importance: skill.importance || 0,
+        level: skill.level || 0,
+        required_level: skill.required_level || 0,
+        current_level: skill.current_level || 0
+      })) : [];
     } catch (error) {
       console.error('Error fetching occupation skills:', error);
-      throw new Error('Failed to fetch occupation skills');
+      throw error;
     }
   }
-  
+
   /**
    * Search for occupations by keyword
    * @param query Search query
-   * @returns List of matching occupations
+   * @returns Array of matching occupations
    */
   public async searchOccupations(query: string): Promise<Occupation[]> {
     try {
-      // In a real implementation, this would call the O*NET API
-      // For now, return mock data
-      return [
-        {
-          id: '15-1252.00',
-          title: 'Software Developers',
-          description: 'Develop, create, and modify general computer applications software or specialized utility programs.',
-          code: '15-1252.00',
-          category: 'Technology',
-          educationLevel: 'Bachelor\'s degree',
-          salary: {
-            median: 110000,
-            range: {
-              min: 85000,
-              max: 160000
-            }
-          },
-          outlook: {
-            growth: 0.22,
-            category: 'Much faster than average'
-          },
-          automationRisk: 0.4
+      const response = await fetch(`${this.apiBaseUrl}/occupations/search?keyword=${encodeURIComponent(query)}`, {
+        headers: this.headers
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to search occupations: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Transform the API response to match the Occupation type
+      return Array.isArray(data.occupations) ? data.occupations.map((occ: any) => ({
+        id: occ.code || '',
+        title: occ.title || '',
+        description: occ.description || '',
+        code: occ.code || '',
+        category: occ.category || '',
+        educationLevel: '',
+        salary: {
+          median: 0,
+          range: {
+            min: 0,
+            max: 0
+          }
         },
-        {
-          id: '15-1257.00',
-          title: 'Web Developers',
-          description: 'Develop and implement websites, web applications, application databases, and interactive web interfaces.',
-          code: '15-1257.00',
-          category: 'Technology',
-          educationLevel: 'Associate\'s degree',
-          salary: {
-            median: 77200,
-            range: {
-              min: 55000,
-              max: 107000
-            }
-          },
-          outlook: {
-            growth: 0.13,
-            category: 'Faster than average'
-          },
-          automationRisk: 0.55
+        outlook: {
+          growth: 0,
+          category: ''
         },
-        {
-          id: '15-1211.00',
-          title: 'Computer Systems Analysts',
-          description: 'Analyze science, engineering, business, and other data processing problems to develop and implement solutions to complex applications problems.',
-          code: '15-1211.00',
-          category: 'Technology',
-          educationLevel: 'Bachelor\'s degree',
-          salary: {
-            median: 93000,
-            range: {
-              min: 70000,
-              max: 120000
-            }
-          },
-          outlook: {
-            growth: 0.07,
-            category: 'Average'
-          },
-          automationRisk: 0.65
-        }
-      ].filter(occupation => 
-        occupation.title.toLowerCase().includes(query.toLowerCase()) ||
-        occupation.description.toLowerCase().includes(query.toLowerCase())
-      );
+        automationRisk: 0
+      })) : [];
     } catch (error) {
       console.error('Error searching occupations:', error);
-      throw new Error('Failed to search occupations');
+      throw error;
     }
-  }
-  
-  /**
-   * Get mock occupation title based on ID
-   * @param occupationId Occupation ID
-   * @returns Mock occupation title
-   */
-  private getMockTitle(occupationId: string): string {
-    const titles: Record<string, string> = {
-      '15-1252.00': 'Software Developers',
-      '15-1257.00': 'Web Developers',
-      '15-1211.00': 'Computer Systems Analysts',
-      '15-1299.00': 'Computer Occupations, All Other',
-      '15-2051.00': 'Data Scientists',
-      '11-9041.00': 'Architectural and Engineering Managers',
-      '17-2061.00': 'Computer Hardware Engineers'
-    };
-    
-    return titles[occupationId] || 'Unknown Occupation';
-  }
-  
-  /**
-   * Get mock occupation description based on ID
-   * @param occupationId Occupation ID
-   * @returns Mock occupation description
-   */
-  private getMockDescription(occupationId: string): string {
-    const descriptions: Record<string, string> = {
-      '15-1252.00': 'Develop, create, and modify general computer applications software or specialized utility programs.',
-      '15-1257.00': 'Develop and implement websites, web applications, application databases, and interactive web interfaces.',
-      '15-1211.00': 'Analyze science, engineering, business, and other data processing problems to develop and implement solutions to complex applications problems.',
-      '15-1299.00': 'All computer occupations not listed separately.',
-      '15-2051.00': 'Develop and implement a set of techniques or analytics applications to transform raw data into meaningful information using data-oriented programming languages and visualization software.',
-      '11-9041.00': 'Plan, direct, or coordinate activities in such fields as architecture and engineering or research and development in these fields.',
-      '17-2061.00': 'Research, design, develop, or test computer or computer-related equipment for commercial, industrial, military, or scientific use.'
-    };
-    
-    return descriptions[occupationId] || 'No description available.';
   }
 }

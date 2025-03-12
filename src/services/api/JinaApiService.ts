@@ -1,9 +1,11 @@
 /**
  * JinaApiService - Service for semantic analysis of occupation tasks
- * Version 1.0
+ * Version 1.1
+ * 
+ * Enhanced with proper error handling, retry logic, and validation
  */
 
-import axios from 'axios';
+import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import { 
   OccupationTask, 
   TaskAutomationRanking,
@@ -14,16 +16,193 @@ import {
 } from '../../types/semantic';
 import { Skill } from '../../types/skills';
 
+// Error types for better error handling
+export enum JinaApiErrorType {
+  AUTHENTICATION = 'authentication_error',
+  RATE_LIMIT = 'rate_limit_error',
+  SERVER = 'server_error',
+  NETWORK = 'network_error',
+  VALIDATION = 'validation_error',
+  UNKNOWN = 'unknown_error'
+}
+
+// Custom error class for Jina API errors
+export class JinaApiError extends Error {
+  type: JinaApiErrorType;
+  statusCode?: number;
+  retryable: boolean;
+  
+  constructor(
+    message: string, 
+    type: JinaApiErrorType = JinaApiErrorType.UNKNOWN, 
+    statusCode?: number,
+    retryable: boolean = false
+  ) {
+    super(message);
+    this.name = 'JinaApiError';
+    this.type = type;
+    this.statusCode = statusCode;
+    this.retryable = retryable;
+  }
+}
+
 /**
  * Service for interacting with the Jina API for semantic analysis
  */
 export class JinaApiService {
   private apiKey: string;
   private baseUrl: string;
+  private maxRetries: number;
+  private retryDelay: number;
+  private lastRequestTimestamp: number = 0;
+  private requestsPerMinute: number = 60; // Default rate limit
+  private logger: Console;
 
-  constructor(apiKey: string, baseUrl: string = 'https://api.jina.ai/v1') {
+  constructor(
+    apiKey: string, 
+    baseUrl: string = 'https://api.jina.ai/v1',
+    maxRetries: number = 3,
+    retryDelay: number = 1000,
+    logger: Console = console
+  ) {
     this.apiKey = apiKey;
     this.baseUrl = baseUrl;
+    this.maxRetries = maxRetries;
+    this.retryDelay = retryDelay;
+    this.logger = logger;
+    
+    // Validate API key
+    if (!this.apiKey || this.apiKey === 'demo-key') {
+      this.logger.warn('JinaApiService initialized with demo key or empty key. API calls may fail.');
+    }
+  }
+
+  /**
+   * Make an API request with retry logic and rate limiting
+   * @param endpoint API endpoint
+   * @param method HTTP method
+   * @param data Request data
+   * @returns Promise with response data
+   */
+  private async makeRequest<T>(
+    endpoint: string, 
+    method: string = 'GET', 
+    data?: any
+  ): Promise<T> {
+    // Implement rate limiting
+    const now = Date.now();
+    const timeGap = now - this.lastRequestTimestamp;
+    const minGap = (60 * 1000) / this.requestsPerMinute;
+    
+    if (timeGap < minGap) {
+      await new Promise(resolve => setTimeout(resolve, minGap - timeGap));
+    }
+    
+    this.lastRequestTimestamp = Date.now();
+    
+    // Setup request config
+    const config: AxiosRequestConfig = {
+      method,
+      url: `${this.baseUrl}${endpoint}`,
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      data: method !== 'GET' ? data : undefined,
+      params: method === 'GET' ? data : undefined
+    };
+    
+    // Implement retry logic
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        const response = await axios(config);
+        return response.data as T;
+      } catch (error) {
+        lastError = this.handleApiError(error as Error | AxiosError, attempt);
+        
+        if (lastError instanceof JinaApiError && !lastError.retryable) {
+          throw lastError;
+        }
+        
+        if (attempt < this.maxRetries) {
+          const delay = this.retryDelay * Math.pow(2, attempt);
+          this.logger.warn(`Retrying request (${attempt + 1}/${this.maxRetries}) after ${delay}ms`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    
+    throw lastError || new JinaApiError('Maximum retries exceeded');
+  }
+  
+  /**
+   * Handle API errors and convert to appropriate error types
+   * @param error Error object
+   * @param attempt Current attempt number
+   * @returns Processed error
+   */
+  private handleApiError(error: Error | AxiosError, attempt: number): Error {
+    if (axios.isAxiosError(error)) {
+      const statusCode = error.response?.status;
+      
+      // Authentication errors
+      if (statusCode === 401 || statusCode === 403) {
+        return new JinaApiError(
+          'Authentication failed. Please check your API key.',
+          JinaApiErrorType.AUTHENTICATION,
+          statusCode,
+          false
+        );
+      }
+      
+      // Rate limit errors
+      if (statusCode === 429) {
+        return new JinaApiError(
+          'Rate limit exceeded. Please slow down your requests.',
+          JinaApiErrorType.RATE_LIMIT,
+          statusCode,
+          true
+        );
+      }
+      
+      // Server errors
+      if (statusCode && statusCode >= 500) {
+        return new JinaApiError(
+          'Jina API server error. Please try again later.',
+          JinaApiErrorType.SERVER,
+          statusCode,
+          true
+        );
+      }
+      
+      // Network errors
+      if (!error.response) {
+        return new JinaApiError(
+          'Network error. Please check your internet connection.',
+          JinaApiErrorType.NETWORK,
+          undefined,
+          true
+        );
+      }
+      
+      // Other errors
+      return new JinaApiError(
+        `API error: ${error.message}`,
+        JinaApiErrorType.UNKNOWN,
+        statusCode,
+        attempt < this.maxRetries
+      );
+    }
+    
+    // Non-Axios errors
+    return new JinaApiError(
+      `Unexpected error: ${error.message}`,
+      JinaApiErrorType.UNKNOWN,
+      undefined,
+      attempt < this.maxRetries
+    );
   }
 
   /**
@@ -68,8 +247,8 @@ export class JinaApiService {
         aggregateScore
       };
     } catch (error) {
-      console.error('Error ranking automation potential:', error);
-      throw new Error(`Failed to rank automation potential: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error('Error ranking automation potential:', error);
+      throw new JinaApiError(`Failed to rank automation potential: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -108,7 +287,7 @@ export class JinaApiService {
       // Normalize to 0-1 range
       return (similarity + 1) / 2;
     } catch (error) {
-      console.error('Error calculating cosine similarity:', error);
+      this.logger.error('Error calculating cosine similarity:', error);
       return 0; // Return 0 similarity on error
     }
   }
@@ -220,8 +399,8 @@ export class JinaApiService {
         return Array(768).fill(0).map(() => Math.random());
       });
     } catch (error) {
-      console.error('Error getting embeddings:', error);
-      throw new Error(`Failed to get embeddings: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error('Error getting embeddings:', error);
+      throw new JinaApiError(`Failed to get embeddings: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -267,8 +446,8 @@ export class JinaApiService {
         ]
       }));
     } catch (error) {
-      console.error('Error analyzing skills automation:', error);
-      throw new Error(`Failed to analyze skills automation: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error('Error analyzing skills automation:', error);
+      throw new JinaApiError(`Failed to analyze skills automation: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -349,8 +528,8 @@ export class JinaApiService {
       // Return alternatives based on skill category, or default to cognitive if category not found
       return alternativesByCategory[skill.category] || alternativesByCategory['cognitive'];
     } catch (error) {
-      console.error('Error recommending skill alternatives:', error);
-      throw new Error(`Failed to recommend skill alternatives: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error('Error recommending skill alternatives:', error);
+      throw new JinaApiError(`Failed to recommend skill alternatives: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -421,8 +600,8 @@ export class JinaApiService {
         skillAlternatives
       };
     } catch (error) {
-      console.error('Error analyzing occupation:', error);
-      throw new Error(`Failed to analyze occupation: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error('Error analyzing occupation:', error);
+      throw new JinaApiError(`Failed to analyze occupation: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -525,8 +704,8 @@ export class JinaApiService {
         recommendedSkillDevelopment
       };
     } catch (error) {
-      console.error('Error getting occupation analysis:', error);
-      throw new Error(`Failed to get occupation analysis: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error('Error getting occupation analysis:', error);
+      throw new JinaApiError(`Failed to get occupation analysis: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   

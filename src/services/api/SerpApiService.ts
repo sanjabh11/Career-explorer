@@ -1,24 +1,206 @@
 /**
  * SerpApiService - Service for retrieving automation research data
- * Version 1.0
+ * Version 1.1
+ * 
+ * Enhanced with proper error handling, retry logic, and validation
  */
 
-import axios from 'axios';
+import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import { AutomationResearchData, SerpApiResponse, ResearchPaper, IndustryReport, NewsArticle, AutomationTrend, ConfidenceScore, RegionalImpact } from '../../types/research';
+
+// Error types for better error handling
+export enum SerpApiErrorType {
+  AUTHENTICATION = 'authentication_error',
+  RATE_LIMIT = 'rate_limit_error',
+  SERVER = 'server_error',
+  NETWORK = 'network_error',
+  VALIDATION = 'validation_error',
+  UNKNOWN = 'unknown_error'
+}
+
+// Custom error class for SERP API errors
+export class SerpApiError extends Error {
+  type: SerpApiErrorType;
+  statusCode?: number;
+  retryable: boolean;
+  
+  constructor(
+    message: string, 
+    type: SerpApiErrorType = SerpApiErrorType.UNKNOWN, 
+    statusCode?: number,
+    retryable: boolean = false
+  ) {
+    super(message);
+    this.name = 'SerpApiError';
+    this.type = type;
+    this.statusCode = statusCode;
+    this.retryable = retryable;
+  }
+}
 
 export class SerpApiService {
   private apiKey: string;
   private baseUrl: string;
   private proxyUrl?: string;
+  private maxRetries: number;
+  private retryDelay: number;
+  private lastRequestTimestamp: number = 0;
+  private requestsPerMinute: number = 60; // Default rate limit
+  private logger: Console;
 
   constructor(
     apiKey: string, 
     baseUrl = 'https://serpapi.com/search',
-    proxyUrl?: string
+    proxyUrl?: string,
+    maxRetries: number = 3,
+    retryDelay: number = 1000,
+    logger: Console = console
   ) {
     this.apiKey = apiKey;
     this.baseUrl = baseUrl;
     this.proxyUrl = proxyUrl;
+    this.maxRetries = maxRetries;
+    this.retryDelay = retryDelay;
+    this.logger = logger;
+    
+    // Validate API key
+    if (!this.apiKey || this.apiKey === 'demo-key') {
+      this.logger.warn('SerpApiService initialized with demo key or empty key. API calls may fail.');
+    }
+  }
+
+  /**
+   * Make an API request with retry logic and rate limiting
+   * @param endpoint API endpoint
+   * @param method HTTP method
+   * @param params Request parameters
+   * @returns Promise with response data
+   */
+  private async makeRequest<T>(
+    endpoint: string = '',
+    method: string = 'GET',
+    params: Record<string, any> = {}
+  ): Promise<T> {
+    // Implement rate limiting
+    const now = Date.now();
+    const timeGap = now - this.lastRequestTimestamp;
+    const minGap = (60 * 1000) / this.requestsPerMinute;
+    
+    if (timeGap < minGap) {
+      await new Promise(resolve => setTimeout(resolve, minGap - timeGap));
+    }
+    
+    this.lastRequestTimestamp = Date.now();
+    
+    // Add API key to parameters
+    const requestParams = {
+      ...params,
+      api_key: this.apiKey
+    };
+    
+    // Setup request config
+    const url = this.proxyUrl || `${this.baseUrl}${endpoint}`;
+    const config: AxiosRequestConfig = {
+      method,
+      url,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      params: method === 'GET' ? requestParams : undefined,
+      data: method !== 'GET' ? requestParams : undefined
+    };
+    
+    // Implement retry logic
+    let lastError: Error | null = null;
+    
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        const response = await axios(config);
+        return response.data as T;
+      } catch (error) {
+        lastError = this.handleApiError(error as Error | AxiosError, attempt);
+        
+        if (lastError instanceof SerpApiError && !lastError.retryable) {
+          throw lastError;
+        }
+        
+        if (attempt < this.maxRetries) {
+          const delay = this.retryDelay * Math.pow(2, attempt);
+          this.logger.warn(`Retrying request (${attempt + 1}/${this.maxRetries}) after ${delay}ms`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    
+    throw lastError || new SerpApiError('Maximum retries exceeded');
+  }
+  
+  /**
+   * Handle API errors and convert to appropriate error types
+   * @param error Error object
+   * @param attempt Current attempt number
+   * @returns Processed error
+   */
+  private handleApiError(error: Error | AxiosError, attempt: number): Error {
+    if (axios.isAxiosError(error)) {
+      const statusCode = error.response?.status;
+      
+      // Authentication errors
+      if (statusCode === 401 || statusCode === 403) {
+        return new SerpApiError(
+          'Authentication failed. Please check your API key.',
+          SerpApiErrorType.AUTHENTICATION,
+          statusCode,
+          false
+        );
+      }
+      
+      // Rate limit errors
+      if (statusCode === 429) {
+        return new SerpApiError(
+          'Rate limit exceeded. Please slow down your requests.',
+          SerpApiErrorType.RATE_LIMIT,
+          statusCode,
+          true
+        );
+      }
+      
+      // Server errors
+      if (statusCode && statusCode >= 500) {
+        return new SerpApiError(
+          'SERP API server error. Please try again later.',
+          SerpApiErrorType.SERVER,
+          statusCode,
+          true
+        );
+      }
+      
+      // Network errors
+      if (!error.response) {
+        return new SerpApiError(
+          'Network error. Please check your internet connection.',
+          SerpApiErrorType.NETWORK,
+          undefined,
+          true
+        );
+      }
+      
+      // Other errors
+      return new SerpApiError(
+        `API error: ${error.message}`,
+        SerpApiErrorType.UNKNOWN,
+        statusCode,
+        attempt < this.maxRetries
+      );
+    }
+    
+    // Non-Axios errors
+    return new SerpApiError(
+      `Unexpected error: ${error.message}`,
+      SerpApiErrorType.UNKNOWN,
+      undefined,
+      attempt < this.maxRetries
+    );
   }
 
   /**
@@ -80,7 +262,7 @@ export class SerpApiService {
         lastUpdated: new Date().toISOString()
       };
     } catch (error) {
-      console.error('Error retrieving automation research:', error);
+      this.logger.error('Error retrieving automation research:', error);
       throw error;
     }
   }
@@ -93,29 +275,35 @@ export class SerpApiService {
     
     if (this.proxyUrl) {
       // Use proxy to avoid exposing API key in client
-      const response = await axios.post(this.proxyUrl, {
-        apiType: 'serp',
-        path: 'search',
-        params: {
-          q: query,
-          engine: 'google_scholar',
-          num: 20,
-          as_ylo: 2020 // Research from 2020 onwards
+      const response = await this.makeRequest<any>(
+        '',
+        'POST',
+        {
+          apiType: 'serp',
+          path: 'search',
+          params: {
+            q: query,
+            engine: 'google_scholar',
+            num: 20,
+            as_ylo: 2020 // Research from 2020 onwards
+          }
         }
-      });
+      );
       
       return response.data;
     } else {
       // Direct API call (server-side only)
-      const response = await axios.get(this.baseUrl, {
-        params: {
+      const response = await this.makeRequest<any>(
+        '',
+        'GET',
+        {
           api_key: this.apiKey,
           q: query,
           engine: 'google_scholar',
           num: 20,
           as_ylo: 2020
         }
-      });
+      );
       
       return response.data;
     }
@@ -253,7 +441,7 @@ export class SerpApiService {
       
       return reports;
     } catch (error) {
-      console.error('Error processing industry results:', error);
+      this.logger.error('Error processing industry results:', error);
       return [];
     }
   }
@@ -306,7 +494,7 @@ export class SerpApiService {
       
       return articles;
     } catch (error) {
-      console.error('Error processing news results:', error);
+      this.logger.error('Error processing news results:', error);
       return [];
     }
   }
