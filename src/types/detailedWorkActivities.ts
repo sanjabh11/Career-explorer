@@ -44,3 +44,28 @@ export interface DWAFrequencyData {
     rarely: number;
   };
 }
+
+// Additional types needed for components
+export interface DWACategory {
+  id: string;
+  name: string;
+  description?: string;
+  activities: DetailedWorkActivity[];
+}
+
+export interface Task {
+  id: string;
+  description: string;
+  importance: number;
+  frequency?: number;
+}
+
+export interface TaskToDWA {
+  tasks: Task[];
+  activities: DetailedWorkActivity[];
+  connections: {
+    taskId: string;
+    activityId: string;
+    strength?: number;
+  }[];
+}

@@ -21,10 +21,11 @@ import {
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
   ArrowUpward as ArrowUpwardIcon,
-  ArrowDownward as ArrowDownwardIcon
+  ArrowDownward as ArrowDownwardIcon,
+  ArrowForward as ArrowForwardIcon
 } from '@mui/icons-material';
 import { SkillGap, SkillMatch } from '@/types/skillsTransferability';
-import { analyzeSkillGaps } from '@/services/SkillsTransferabilityService';
+import { getSkillGaps, getSkillMatches } from '@/services/SkillsTransferabilityService';
 
 interface SkillGapVisualizationProps {
   sourceOccupationCode: string;
@@ -49,16 +50,48 @@ const SkillGapVisualization: React.FC<SkillGapVisualizationProps> = ({
   
   useEffect(() => {
     const fetchData = async () => {
-      if (!sourceOccupationCode || !targetOccupationCode) return;
+      if (!sourceOccupationCode || !targetOccupationCode) {
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
-        const data = await analyzeSkillGaps(sourceOccupationCode, targetOccupationCode);
-        setSkillGapData(data);
+        
+        // Fetch skill gaps and matches
+        const gapSkills = await getSkillGaps(sourceOccupationCode, targetOccupationCode);
+        const matchedSkills = await getSkillMatches(sourceOccupationCode, targetOccupationCode);
+        
+        // In a real app, we would get these from an API
+        // For now, we'll use placeholder data for occupation titles
+        const sourceOccupation = {
+          code: sourceOccupationCode,
+          title: 'Source Occupation' // This would come from API
+        };
+        
+        const targetOccupation = {
+          code: targetOccupationCode,
+          title: 'Target Occupation' // This would come from API
+        };
+        
+        // Calculate overall match percentage based on matched vs. gap skills
+        const totalSkills = matchedSkills.length + gapSkills.length;
+        const overallMatch = totalSkills > 0 
+          ? Math.round((matchedSkills.length / totalSkills) * 100) 
+          : 0;
+        
+        setSkillGapData({
+          matchedSkills,
+          gapSkills,
+          sourceOccupation,
+          targetOccupation,
+          overallMatch
+        });
+        
         setLoading(false);
       } catch (err) {
         console.error('Error fetching skill gap data:', err);
-        setError('Failed to load skill gap data');
+        setError('Failed to load skill gap data. Please try again later.');
         setLoading(false);
       }
     };
@@ -67,213 +100,219 @@ const SkillGapVisualization: React.FC<SkillGapVisualizationProps> = ({
   }, [sourceOccupationCode, targetOccupationCode]);
   
   if (loading) {
-    return <CircularProgress />;
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <CircularProgress />
+        <Typography variant="body2" sx={{ mt: 2 }}>
+          Analyzing skill gaps...
+        </Typography>
+      </Box>
+    );
   }
   
   if (error) {
-    return <Alert severity="error">{error}</Alert>;
+    return (
+      <Alert severity="error" sx={{ m: 2 }}>
+        {error}
+      </Alert>
+    );
   }
   
   if (!skillGapData) {
-    return <Alert severity="info">No skill gap data available.</Alert>;
+    return (
+      <Alert severity="info" sx={{ m: 2 }}>
+        Please select both source and target occupations to analyze skill gaps.
+      </Alert>
+    );
   }
   
-  const { matchedSkills, gapSkills, sourceOccupation, targetOccupation, overallMatch } = skillGapData;
-  
   return (
-    <Box>
-      <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={5}>
-            <Typography variant="subtitle1">{sourceOccupation.title}</Typography>
-            <Typography variant="caption" color="text.secondary">
-              Current Occupation (Code: {sourceOccupation.code})
-            </Typography>
+    <Box sx={{ p: 2 }}>
+      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h5" gutterBottom>
+          Skills Transferability Analysis
+        </Typography>
+        <Typography variant="body1" paragraph>
+          Comparing skills from {skillGapData.sourceOccupation.title} to {skillGapData.targetOccupation.title}
+        </Typography>
+        
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle1" gutterBottom>
+            Overall Match: {skillGapData.overallMatch}%
+          </Typography>
+          <LinearProgress 
+            variant="determinate" 
+            value={skillGapData.overallMatch} 
+            sx={{ 
+              height: 10, 
+              borderRadius: 5,
+              bgcolor: 'grey.300',
+              '& .MuiLinearProgress-bar': {
+                bgcolor: skillGapData.overallMatch > 70 
+                  ? 'success.main' 
+                  : skillGapData.overallMatch > 40 
+                    ? 'warning.main' 
+                    : 'error.main'
+              }
+            }}
+          />
+        </Box>
+        
+        <Divider sx={{ my: 3 }} />
+        
+        <Grid container spacing={3}>
+          {/* Matched Skills */}
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined">
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <CheckCircleIcon color="success" sx={{ mr: 1 }} />
+                  <Typography variant="h6">
+                    Matched Skills ({skillGapData.matchedSkills.length})
+                  </Typography>
+                </Box>
+                
+                {skillGapData.matchedSkills.length === 0 ? (
+                  <Alert severity="info">No matched skills found.</Alert>
+                ) : (
+                  <Box>
+                    {skillGapData.matchedSkills.map((skill) => (
+                      <Box 
+                        key={skill.id}
+                        sx={{ 
+                          mb: 2, 
+                          p: 1.5, 
+                          borderRadius: 1, 
+                          bgcolor: 'success.light',
+                          color: 'success.contrastText'
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography variant="subtitle1">{skill.name}</Typography>
+                          <Chip 
+                            label={`${Math.round(skill.transferability * 100)}% transferable`}
+                            size="small"
+                            color="success"
+                          />
+                        </Box>
+                        <Typography variant="body2" sx={{ mt: 1 }}>
+                          {skill.description}
+                        </Typography>
+                        <Box sx={{ mt: 1 }}>
+                          <Chip 
+                            label={`Level: ${skill.level}`}
+                            size="small"
+                            sx={{ mr: 1 }}
+                          />
+                          <Chip 
+                            label={skill.category}
+                            size="small"
+                            variant="outlined"
+                          />
+                          {onViewSkillDetails && (
+                            <Button 
+                              size="small" 
+                              sx={{ ml: 1 }}
+                              onClick={() => onViewSkillDetails(skill.id)}
+                            >
+                              Details
+                            </Button>
+                          )}
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
           </Grid>
           
-          <Grid item xs={12} sm={2} sx={{ textAlign: 'center' }}>
-            <Typography variant="h5">→</Typography>
-          </Grid>
-          
-          <Grid item xs={12} sm={5}>
-            <Typography variant="subtitle1">{targetOccupation.title}</Typography>
-            <Typography variant="caption" color="text.secondary">
-              Target Occupation (Code: {targetOccupation.code})
-            </Typography>
-          </Grid>
-          
-          <Grid item xs={12}>
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="body2" gutterBottom>
-                Overall Skills Match: {Math.round(overallMatch * 100)}%
-              </Typography>
-              <LinearProgress 
-                variant="determinate" 
-                value={overallMatch * 100} 
-                sx={{ 
-                  height: 10, 
-                  borderRadius: 5,
-                  backgroundColor: '#e0e0e0',
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: overallMatch >= 0.7 ? '#4caf50' : overallMatch >= 0.4 ? '#ff9800' : '#f44336'
-                  }
-                }}
-              />
-            </Box>
+          {/* Gap Skills */}
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined">
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <ErrorIcon color="error" sx={{ mr: 1 }} />
+                  <Typography variant="h6">
+                    Skill Gaps ({skillGapData.gapSkills.length})
+                  </Typography>
+                </Box>
+                
+                {skillGapData.gapSkills.length === 0 ? (
+                  <Alert severity="success">No skill gaps found!</Alert>
+                ) : (
+                  <Box>
+                    {skillGapData.gapSkills.map((skill) => (
+                      <Box 
+                        key={skill.id}
+                        sx={{ 
+                          mb: 2, 
+                          p: 1.5, 
+                          borderRadius: 1, 
+                          bgcolor: 'error.light',
+                          color: 'error.contrastText'
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography variant="subtitle1">{skill.name}</Typography>
+                          <Tooltip title={`Difficulty: ${skill.difficulty * 10}/10`}>
+                            <Chip 
+                              label={`Difficulty: ${Math.round(skill.difficulty * 10)}/10`}
+                              size="small"
+                              color="error"
+                            />
+                          </Tooltip>
+                        </Box>
+                        <Typography variant="body2" sx={{ mt: 1 }}>
+                          {skill.description}
+                        </Typography>
+                        <Box sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
+                          <Chip 
+                            icon={<ArrowUpwardIcon />}
+                            label={`Current: ${skill.currentLevel}`}
+                            size="small"
+                            sx={{ mr: 1 }}
+                          />
+                          <ArrowForwardIcon sx={{ mx: 0.5 }} />
+                          <Chip 
+                            icon={<ArrowDownwardIcon />}
+                            label={`Required: ${skill.requiredLevel}`}
+                            size="small"
+                          />
+                        </Box>
+                        <Box sx={{ mt: 1 }}>
+                          <Chip 
+                            label={skill.category}
+                            size="small"
+                            variant="outlined"
+                            sx={{ mr: 1 }}
+                          />
+                          {skill.trainingOption && (
+                            <Chip 
+                              label={`Training: ${skill.trainingOption}`}
+                              size="small"
+                              color="secondary"
+                            />
+                          )}
+                          {onViewSkillDetails && (
+                            <Button 
+                              size="small" 
+                              sx={{ ml: 1 }}
+                              onClick={() => onViewSkillDetails(skill.id)}
+                            >
+                              Details
+                            </Button>
+                          )}
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
           </Grid>
         </Grid>
       </Paper>
-      
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
-          <Typography variant="h6" gutterBottom>
-            Matched Skills ({matchedSkills.length})
-          </Typography>
-          
-          {matchedSkills.length === 0 ? (
-            <Alert severity="info">No matched skills found.</Alert>
-          ) : (
-            <Card variant="outlined">
-              <CardContent>
-                {matchedSkills.map((skill, index) => (
-                  <React.Fragment key={skill.id}>
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start', py: 1 }}>
-                      <CheckCircleIcon color="success" sx={{ mr: 1, mt: 0.5 }} />
-                      <Box sx={{ flex: 1 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Typography variant="subtitle2">{skill.name}</Typography>
-                          <Button 
-                            size="small" 
-                            onClick={() => onViewSkillDetails && onViewSkillDetails(skill.id)}
-                          >
-                            Details
-                          </Button>
-                        </Box>
-                        
-                        <Box sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
-                          <Typography variant="body2" sx={{ mr: 1 }}>
-                            Your Level: {skill.currentLevel.toFixed(1)}
-                          </Typography>
-                          
-                          {skill.currentLevel < skill.requiredLevel ? (
-                            <Chip 
-                              size="small" 
-                              color="warning" 
-                              label={`Need +${(skill.requiredLevel - skill.currentLevel).toFixed(1)}`}
-                              icon={<ArrowUpwardIcon />}
-                            />
-                          ) : skill.currentLevel > skill.requiredLevel ? (
-                            <Chip 
-                              size="small" 
-                              color="success" 
-                              label={`+${(skill.currentLevel - skill.requiredLevel).toFixed(1)} higher`}
-                              icon={<ArrowDownwardIcon />}
-                            />
-                          ) : (
-                            <Chip 
-                              size="small" 
-                              color="primary" 
-                              label="Exact Match"
-                            />
-                          )}
-                        </Box>
-                        
-                        <Box sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
-                          <Typography variant="caption" sx={{ width: 100 }}>
-                            Required: {skill.requiredLevel.toFixed(1)}/5
-                          </Typography>
-                          <LinearProgress 
-                            variant="determinate" 
-                            value={(skill.requiredLevel / 5) * 100}
-                            sx={{ flex: 1, mx: 1, height: 6 }}
-                          />
-                        </Box>
-                        
-                        <Box sx={{ mt: 0.5, display: 'flex', alignItems: 'center' }}>
-                          <Typography variant="caption" sx={{ width: 100 }}>
-                            Your level: {skill.currentLevel.toFixed(1)}/5
-                          </Typography>
-                          <LinearProgress 
-                            variant="determinate" 
-                            value={(skill.currentLevel / 5) * 100}
-                            color={skill.currentLevel >= skill.requiredLevel ? "success" : "warning"}
-                            sx={{ flex: 1, mx: 1, height: 6 }}
-                          />
-                        </Box>
-                      </Box>
-                    </Box>
-                    {index < matchedSkills.length - 1 && <Divider />}
-                  </React.Fragment>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-        </Grid>
-        
-        <Grid item xs={12} md={6}>
-          <Typography variant="h6" gutterBottom>
-            Missing Skills ({gapSkills.length})
-          </Typography>
-          
-          {gapSkills.length === 0 ? (
-            <Alert severity="success">No skill gaps found! You have all required skills.</Alert>
-          ) : (
-            <Card variant="outlined">
-              <CardContent>
-                {gapSkills.map((skill, index) => (
-                  <React.Fragment key={skill.id}>
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start', py: 1 }}>
-                      <ErrorIcon color="error" sx={{ mr: 1, mt: 0.5 }} />
-                      <Box sx={{ flex: 1 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Typography variant="subtitle2">{skill.name}</Typography>
-                          <Button 
-                            size="small" 
-                            onClick={() => onViewSkillDetails && onViewSkillDetails(skill.id)}
-                          >
-                            Details
-                          </Button>
-                        </Box>
-                        
-                        <Typography variant="body2" sx={{ mt: 0.5 }} color="text.secondary">
-                          {skill.description?.length > 120 
-                            ? `${skill.description.substring(0, 120)}...` 
-                            : skill.description}
-                        </Typography>
-                        
-                        <Box sx={{ mt: 1 }}>
-                          <Chip 
-                            size="small" 
-                            color="error" 
-                            label={`Required Level: ${skill.requiredLevel.toFixed(1)}/5`}
-                          />
-                          {skill.importance && (
-                            <Chip 
-                              size="small" 
-                              color="primary" 
-                              label={`Importance: ${skill.importance.toFixed(1)}/5`}
-                              sx={{ ml: 1 }}
-                            />
-                          )}
-                        </Box>
-                        
-                        {skill.trainingOptions && skill.trainingOptions.length > 0 && (
-                          <Box sx={{ mt: 1 }}>
-                            <Typography variant="caption" color="text.secondary">
-                              Training options available
-                            </Typography>
-                          </Box>
-                        )}
-                      </Box>
-                    </Box>
-                    {index < gapSkills.length - 1 && <Divider />}
-                  </React.Fragment>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-        </Grid>
-      </Grid>
     </Box>
   );
 };

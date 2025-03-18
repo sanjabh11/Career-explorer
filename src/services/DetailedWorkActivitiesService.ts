@@ -7,7 +7,10 @@ import {
   WorkActivityCategory,
   TaskToDWAMapping,
   DWAHierarchy,
-  DWAFrequencyData
+  DWAFrequencyData,
+  DWACategory,
+  Task,
+  TaskToDWA
 } from '@/types/detailedWorkActivities';
 
 const API_BASE_URL = '/.netlify/functions/onet-proxy';
@@ -166,11 +169,87 @@ export const getDWAFrequencyData = async (
   }
 };
 
+/**
+ * Retrieves DWA categories for a specific occupation
+ * @param code O*NET-SOC code for the occupation
+ * @returns Promise resolving to an array of DWACategory objects
+ */
+export const getDWACategories = async (
+  code: string
+): Promise<DWACategory[]> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/dwa/categories?code=${encodeURIComponent(code)}`);
+    
+    if (!response.data.categories) {
+      throw new Error('Invalid response format: missing categories array');
+    }
+    
+    return response.data.categories.map((cat: any) => ({
+      id: cat.id,
+      name: cat.name,
+      description: cat.description || '',
+      activities: cat.activities.map((act: any) => ({
+        id: act.id,
+        description: act.description,
+        category: cat.id,
+        frequency: act.frequency,
+        importance: act.importance
+      }))
+    }));
+  } catch (error) {
+    console.error(`Error fetching DWA categories for occupation ${code}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Retrieves task to DWA mapping data in a format suitable for visualization
+ * @param code O*NET-SOC code for the occupation
+ * @returns Promise resolving to a TaskToDWA object
+ */
+export const getTaskToDWAMapping = async (
+  code: string
+): Promise<TaskToDWA> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/dwa/task-connections?code=${encodeURIComponent(code)}`);
+    
+    if (!response.data || !response.data.tasks || !response.data.activities || !response.data.connections) {
+      throw new Error('Invalid response format: missing required data');
+    }
+    
+    return {
+      tasks: response.data.tasks.map((task: any) => ({
+        id: task.id,
+        description: task.description,
+        importance: task.importance || 0,
+        frequency: task.frequency
+      })),
+      activities: response.data.activities.map((activity: any) => ({
+        id: activity.id,
+        description: activity.description,
+        category: activity.category,
+        importance: activity.importance || 0,
+        frequency: activity.frequency
+      })),
+      connections: response.data.connections.map((conn: any) => ({
+        taskId: conn.task_id,
+        activityId: conn.activity_id,
+        strength: conn.strength
+      }))
+    };
+  } catch (error) {
+    console.error(`Error fetching task to DWA mapping for occupation ${code}:`, error);
+    throw error;
+  }
+};
+
 // Export additional methods that will be implemented as needed
 export default {
   getDetailedWorkActivities,
   getWorkActivityCategories,
   getTaskToDWAMappings,
   getDWAHierarchy,
-  getDWAFrequencyData
+  getDWAFrequencyData,
+  getDWACategories,
+  getTaskToDWAMapping
 };

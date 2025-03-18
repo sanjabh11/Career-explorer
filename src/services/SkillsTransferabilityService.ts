@@ -8,7 +8,13 @@ import {
   SkillTransferability,
   SkillCluster,
   TransferPathway,
-  SkillGapVisualization
+  SkillGapVisualization,
+  SkillTransferabilityData,
+  SkillGap,
+  SkillMatch,
+  CareerPath,
+  CareerPathStep,
+  CareerTransitionGap
 } from '@/types/skillsTransferability';
 
 const API_BASE_URL = '/.netlify/functions/onet-proxy';
@@ -185,10 +191,187 @@ export const findCareerPathway = async (
   }
 };
 
+/**
+ * Gets skill transferability data for visualization
+ * @param occupationCode O*NET-SOC code for the occupation
+ * @returns Promise resolving to a SkillTransferabilityData object
+ */
+export const getSkillTransferabilityData = async (
+  occupationCode: string
+): Promise<SkillTransferabilityData> => {
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/skills/network?code=${encodeURIComponent(occupationCode)}`
+    );
+    
+    if (!response.data.network) {
+      throw new Error('Invalid response format: missing network data');
+    }
+    
+    return {
+      nodes: response.data.network.nodes.map((node: any) => ({
+        id: node.id,
+        name: node.name,
+        description: node.description || '',
+        level: node.level || 0,
+        value: node.value || 1,
+        category: node.category,
+        subcategory: node.subcategory,
+        importance: node.importance || 0,
+        label: node.name, // Add label for visualization
+        type: node.type || 'skill'
+      })),
+      edges: response.data.network.edges.map((edge: any) => ({
+        source: edge.source,
+        target: edge.target,
+        strength: edge.strength || 0.5,
+        type: edge.type || 'direct'
+      })),
+      clusters: response.data.network.clusters?.map((cluster: any) => ({
+        id: cluster.id,
+        name: cluster.name,
+        skills: cluster.skills,
+        relatedClusters: cluster.related_clusters || [],
+        occupations: cluster.occupations || []
+      }))
+    };
+  } catch (error) {
+    console.error(`Error getting skill transferability data for occupation ${occupationCode}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Gets skill gaps between current and target occupation
+ * @param currentCode O*NET-SOC code for the current occupation
+ * @param targetCode O*NET-SOC code for the target occupation
+ * @returns Promise resolving to an array of SkillGap objects
+ */
+export const getSkillGaps = async (
+  currentCode: string,
+  targetCode: string
+): Promise<SkillGap[]> => {
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/skills/gaps?current=${encodeURIComponent(currentCode)}&target=${encodeURIComponent(targetCode)}`
+    );
+    
+    if (!response.data.gaps) {
+      throw new Error('Invalid response format: missing gaps array');
+    }
+    
+    return response.data.gaps.map((gap: any) => ({
+      id: gap.id,
+      name: gap.name,
+      description: gap.description,
+      currentLevel: gap.current_level,
+      requiredLevel: gap.required_level,
+      category: gap.category,
+      trainingOption: gap.training_option,
+      difficulty: gap.difficulty
+    }));
+  } catch (error) {
+    console.error(`Error getting skill gaps between ${currentCode} and ${targetCode}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Gets skill matches between current and target occupation
+ * @param currentCode O*NET-SOC code for the current occupation
+ * @param targetCode O*NET-SOC code for the target occupation
+ * @returns Promise resolving to an array of SkillMatch objects
+ */
+export const getSkillMatches = async (
+  currentCode: string,
+  targetCode: string
+): Promise<SkillMatch[]> => {
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/skills/matches?current=${encodeURIComponent(currentCode)}&target=${encodeURIComponent(targetCode)}`
+    );
+    
+    if (!response.data.matches) {
+      throw new Error('Invalid response format: missing matches array');
+    }
+    
+    return response.data.matches.map((match: any) => ({
+      id: match.id,
+      name: match.name,
+      description: match.description,
+      level: match.level,
+      category: match.category,
+      importance: match.importance,
+      transferability: match.transferability
+    }));
+  } catch (error) {
+    console.error(`Error getting skill matches between ${currentCode} and ${targetCode}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Gets career pathways for a specific occupation
+ * @param occupationCode O*NET-SOC code for the occupation
+ * @param maxPathLength Maximum number of steps in each path
+ * @returns Promise resolving to an array of CareerPath objects
+ */
+export const getCareerPathways = async (
+  occupationCode: string,
+  maxPathLength: number = 3
+): Promise<CareerPath[]> => {
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/skills/career-paths?code=${encodeURIComponent(occupationCode)}&maxLength=${maxPathLength}`
+    );
+    
+    if (!response.data.paths) {
+      throw new Error('Invalid response format: missing paths array');
+    }
+    
+    return response.data.paths.map((path: any) => ({
+      id: path.id,
+      name: path.name,
+      description: path.description,
+      difficulty: path.difficulty,
+      estimatedTimeYears: path.estimated_time_years,
+      steps: path.steps.map((step: any) => ({
+        occupation: {
+          code: step.occupation.code,
+          title: step.occupation.title
+        },
+        title: step.title,
+        description: step.description,
+        salary: step.salary,
+        growthRate: step.growth_rate,
+        brightOutlook: step.bright_outlook,
+        educationRequired: step.education_required,
+        experienceRequired: step.experience_required,
+        timingMonths: step.timing_months,
+        gaps: step.gaps?.map((gap: any) => ({
+          id: gap.id,
+          name: gap.name,
+          description: gap.description,
+          currentLevel: gap.current_level,
+          requiredLevel: gap.required_level,
+          trainingOption: gap.training_option
+        }))
+      }))
+    }));
+  } catch (error) {
+    console.error(`Error getting career pathways for occupation ${occupationCode}:`, error);
+    throw error;
+  }
+};
+
 // Export additional methods that will be implemented as needed
 export default {
   analyzeSkillsTransferability,
   getSkillVisualizationData,
   getSkillClusters,
-  findCareerPathway
+  findCareerPathway,
+  getSkillTransferabilityData,
+  getSkillGaps,
+  getSkillMatches,
+  getCareerPathways
 };

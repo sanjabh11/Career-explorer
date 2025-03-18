@@ -12,6 +12,8 @@ export interface SkillNode {
   category: string;
   subcategory?: string;
   importance: number;
+  label: string;
+  type?: 'skill' | 'occupation' | 'category';
 }
 
 export interface SkillEdge {
@@ -68,4 +70,66 @@ export interface SkillGapVisualization {
   missing: SkillNode[];
   excess: SkillNode[];
   connections: SkillEdge[];
+}
+
+// Additional types needed for components
+export interface SkillTransferabilityData {
+  nodes: SkillNode[];
+  edges: SkillEdge[];
+  clusters?: SkillCluster[];
+}
+
+export interface SkillGap {
+  id: string;
+  name: string;
+  description: string;
+  currentLevel: number;
+  requiredLevel: number;
+  category: string;
+  trainingOption?: string;
+  difficulty: number; // 0-1 scale of difficulty to acquire
+}
+
+export interface SkillMatch {
+  id: string;
+  name: string;
+  description: string;
+  level: number;
+  category: string;
+  importance: number;
+  transferability: number; // 0-1 scale of how transferable
+}
+
+export interface CareerPath {
+  id: string;
+  name: string;
+  description?: string;
+  steps: CareerPathStep[];
+  difficulty: number; // 0-1 scale
+  estimatedTimeYears: number;
+}
+
+export interface CareerPathStep {
+  occupation: {
+    code: string;
+    title: string;
+  };
+  title?: string;
+  description?: string;
+  salary?: number;
+  growthRate?: number;
+  brightOutlook?: boolean;
+  educationRequired?: string;
+  experienceRequired?: string;
+  timingMonths?: number;
+  gaps?: CareerTransitionGap[];
+}
+
+export interface CareerTransitionGap {
+  id: string;
+  name: string;
+  description?: string;
+  currentLevel: number;
+  requiredLevel: number;
+  trainingOption?: string;
 }

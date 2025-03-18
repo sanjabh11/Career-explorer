@@ -15,6 +15,9 @@ export interface TechnologySkill {
   adoption_rate?: number; // 0-1 scale
   first_added?: string; // Date when first added to O*NET
   last_updated?: string; // Date when last updated
+  hot?: boolean; // Simplified property for UI
+  skillLevel?: string; // Simplified level for UI
+  importance?: number; // Importance score 0-5
 }
 
 export interface TechnologyCategory {
@@ -68,5 +71,35 @@ export interface HotTechnology {
     code: string;
     title: string;
     score: number;
+  }[];
+  trend?: TechnologyTrendType;
+  category?: string;
+  growthRate?: number;
+  relatedOccupations?: {
+    code: string;
+    title: string;
+  }[];
+  resourceUrl?: string;
+}
+
+// Enum for technology trends
+export enum TechnologyTrendType {
+  Emerging = "Emerging",
+  Growing = "Growing",
+  Stable = "Stable",
+  Declining = "Declining"
+}
+
+// Additional types for components
+export interface TechnologyTrendData {
+  id: string;
+  name: string;
+  category: string;
+  trend: TechnologyTrendType;
+  currentAdoption: number; // 0-1 scale
+  growthRate: number; // percentage
+  historicalData: {
+    year: number;
+    value: number;
   }[];
 }
