@@ -55,6 +55,9 @@ export interface OccupationDetails extends Occupation {
     max: number;
     median: number;
   };
+  jobOutlook?: JobOutlook;
+  jobZone?: number;
+  relatedOccupations?: RelatedOccupation[];
 }
 
 export interface CategoryData {
@@ -93,6 +96,28 @@ export interface WagesEmploymentTrends {
   employment: number;
   growthRate: number;
   projectedOpenings: number;
+}
+
+export interface JobOutlook {
+  growthRate: number;
+  projectedOpenings: number;
+  brightOutlook: boolean;
+  brightOutlookReasons: string[];
+  growthOutlookDescription: string;
+  salaryRange: {
+    min: number;
+    median: number;
+    max: number;
+    currency: string;
+  };
+  employmentData: {
+    current: number;
+    projected: number;
+    changePercent: number;
+    changeValue: number;
+  };
+  lastUpdated: string;
+  source: string;
 }
 
 export interface WorkContext {

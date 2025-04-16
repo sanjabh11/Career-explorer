@@ -3,6 +3,12 @@ import ReactDOM from 'react-dom';
 import './styles/globals.css'; // Make sure this points to the correct file
 import App from './App';
 // import reportWebVitals from './reportWebVitals';
+import { initDevSetup } from './setupDev';
+
+// Initialize development setup
+if (process.env.NODE_ENV === 'development') {
+  initDevSetup();
+}
 
 ReactDOM.render(
   <React.StrictMode>

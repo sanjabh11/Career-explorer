@@ -9,12 +9,13 @@ import APOVisualization from './APOVisualization';
 import IndustryAnalysis from './IndustryAnalysis';
 import { AutomationFactor } from '@/types/automation';
 import { calculateAPO, getAverageAPO, calculateOverallAPO } from '../utils/apoCalculations';
-import { Briefcase, Book, Brain, BarChart2, Cpu, GitBranch, Building, Shield } from 'lucide-react';
+import { Briefcase, Book, Brain, BarChart2, Cpu, GitBranch, Building, Shield, TrendingUp, Info, Zap } from 'lucide-react';
 import { OccupationData, Task, Skill, WorkActivity, Technology, Knowledge, Ability } from '@/types/occupation';
-import { APOItem } from '@/types/onet';
+import { APOItem, JobOutlook } from '@/types/onet';
 import { AutomationDataService } from '@/services/AutomationDataService';
 import { predictAutomationTrend } from '@/utils/automationPrediction';
 import { AutomationTrend, PredictedAPO, ResearchData } from '@/types/automationTrends';
+import { DynamicAPOResult } from '@/utils/dynamicApoCalculations';
 import HistoricalTrendChart from './HistoricalTrendChart';
 import ResearchInsights from './ResearchInsights';
 import FactorImpactAnalysis from './FactorImpactAnalysis';
@@ -23,10 +24,14 @@ import CareerProgressionTab from './career-progression/CareerProgressionTab';
 import { WorkEnvironmentTab } from './work-environment/WorkEnvironmentTab';
 import { AutomationRiskTab } from './automation-risk/AutomationRiskTab';
 import SkillsContainer from './skills/SkillsContainer';
+import OutlookDisplay from './JobOutlook/OutlookDisplay';
+import { jobOutlookService } from '@/services/JobOutlookService';
+import { Badge } from "@/components/ui/badge";
+import ApiTestPanel from './ApiTestPanel';
 
 const convertToAPOItem = (item: Task | Skill | WorkActivity | Technology | Knowledge | Ability): APOItem => {
-  const value = 'level' in item && item.level !== undefined 
-    ? (item.level / 5) * 100 
+  const value = 'level' in item && item.level !== undefined
+    ? (item.level / 5) * 100
     : item.value || 50;
 
   return {
@@ -45,6 +50,10 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
   const [researchData, setResearchData] = useState<ResearchData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [chartType, setChartType] = useState<'radar' | 'bar' | 'pie'>('bar');
+  const [jobOutlook, setJobOutlook] = useState<JobOutlook | null>(null);
+  const [outlookLoading, setOutlookLoading] = useState(true);
+  const [dynamicAPO, setDynamicAPO] = useState<DynamicAPOResult | null>(null);
+  const [apoLoading, setApoLoading] = useState(true);
   const automationService = new AutomationDataService();
 
   useEffect(() => {
@@ -61,7 +70,7 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
             occupation.code || '',
             { startDate, endDate }
           ),
-          automationService.getLatestResearchData()
+          automationService.getLatestResearchData(occupation.title)
         ]);
 
         setHistoricalData(historical);
@@ -81,6 +90,59 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
     };
 
     fetchData();
+  }, [occupation.code, occupation.title]);
+
+  // Fetch dynamic APO data
+  useEffect(() => {
+    const fetchDynamicAPO = async () => {
+      setApoLoading(true);
+      try {
+        // Calculate dynamic APO
+        const result = await automationService.calculateOccupationAPO(occupation, {
+          industry: occupation.industry || undefined,
+          fallbackToStatic: true
+        });
+
+        setDynamicAPO(result);
+        console.log('Dynamic APO result:', result);
+      } catch (error) {
+        console.error('Error calculating dynamic APO:', error);
+      } finally {
+        setApoLoading(false);
+      }
+    };
+
+    fetchDynamicAPO();
+  }, [occupation]);
+
+  // Fetch job outlook data
+  useEffect(() => {
+    const fetchJobOutlook = async () => {
+      setOutlookLoading(true);
+      try {
+        // Only fetch if we have a valid occupation code
+        if (occupation.code && occupation.code.trim() !== '') {
+          const outlookData = await jobOutlookService.getJobOutlook(occupation.code);
+          setJobOutlook(outlookData);
+        } else {
+          // If no occupation code, set to null
+          setJobOutlook(null);
+        }
+      } catch (error) {
+        console.error('Error fetching job outlook:', error);
+        // Try to get mock data instead of setting to null
+        try {
+          const mockData = await jobOutlookService.getJobOutlook('15-1252.00'); // Default to software developer
+          setJobOutlook(mockData);
+        } catch (mockError) {
+          setJobOutlook(null);
+        }
+      } finally {
+        setOutlookLoading(false);
+      }
+    };
+
+    fetchJobOutlook();
   }, [occupation.code]);
 
   const getAutomationFactor = (occupation: OccupationData): AutomationFactor => {
@@ -108,7 +170,7 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
 
   const calculateComplexity = (occupation: OccupationData): number => {
     const skills = occupation.skills || [];
-    const avgSkillLevel = skills.reduce((acc: number, skill: Skill) => 
+    const avgSkillLevel = skills.reduce((acc: number, skill: Skill) =>
       acc + (skill.level || 0), 0) / (skills.length || 1);
     return Math.max(1, Math.min(5, Math.round(avgSkillLevel)));
   };
@@ -117,7 +179,7 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
     const tasks = occupation.tasks || [];
     const routineTasks = tasks.filter((task: Task) => {
       const description = (task.description || '').toLowerCase();
-      return description.includes('routine') || 
+      return description.includes('routine') ||
              description.includes('repetitive') ||
              description.includes('regular') ||
              description.includes('standard') ||
@@ -125,13 +187,13 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
     });
 
     const standardizationScore = routineTasks.length / (tasks.length || 1);
-    
+
     const skills = occupation.skills || [];
     const uniqueSkillCategories = new Set(skills.map((skill: Skill) => skill.category));
-    const skillVarietyScore = 1 - (uniqueSkillCategories.size / 10); 
+    const skillVarietyScore = 1 - (uniqueSkillCategories.size / 10);
 
     const activities = occupation.workActivities || [];
-    const activityVarietyScore = 1 - (activities.length / 20); 
+    const activityVarietyScore = 1 - (activities.length / 20);
 
     const repetitiveness = (
       standardizationScore * 0.5 +
@@ -198,7 +260,7 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
   };
 
   const overallAPO = calculateOverallAPO(occupation);
-  
+
   const categoryData = {
     categories: [
       { name: 'Tasks', value: getAverageAPO(occupation.tasks.map(convertToAPOItem), 'tasks') },
@@ -212,10 +274,14 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
   return (
     <div className="space-y-6">
       <Tabs defaultValue="apo" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6 mb-8">
+        <TabsList className="grid w-full grid-cols-8 mb-8">
           <TabsTrigger value="apo">
             <Briefcase className="h-4 w-4 mr-2" />
             Overview
+          </TabsTrigger>
+          <TabsTrigger value="outlook">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Job Outlook
           </TabsTrigger>
           <TabsTrigger value="education">
             <Book className="h-4 w-4 mr-2" />
@@ -241,6 +307,10 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
             <Brain className="h-4 w-4 mr-2" />
             Skills
           </TabsTrigger>
+          <TabsTrigger value="api-test">
+            <Zap className="h-4 w-4 mr-2" />
+            API Test
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="apo">
@@ -251,8 +321,21 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
                 <div className="flex items-center gap-4">
                   <span className="text-lg font-semibold">Overall APO:</span>
                   <div className="flex items-center gap-2">
-                    <Progress value={calculateOverallAPO(occupation)} className="w-[200px]" />
-                    <span className="text-lg">{calculateOverallAPO(occupation).toFixed(2)}%</span>
+                    <Progress
+                      value={dynamicAPO ? dynamicAPO.overallAPO : calculateOverallAPO(occupation)}
+                      className="w-[200px]"
+                    />
+                    <span className="text-lg">
+                      {dynamicAPO ? dynamicAPO.overallAPO.toFixed(2) : calculateOverallAPO(occupation).toFixed(2)}%
+                    </span>
+                    {dynamicAPO && (
+                      <Badge variant={dynamicAPO.dataSource === 'dynamic' ? 'default' :
+                             dynamicAPO.dataSource === 'hybrid' ? 'secondary' : 'outline'}
+                      >
+                        {dynamicAPO.dataSource === 'dynamic' ? 'Live Data' :
+                         dynamicAPO.dataSource === 'hybrid' ? 'Hybrid' : 'Static'}
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 <Select value={chartType} onValueChange={(value: 'radar' | 'bar' | 'pie') => setChartType(value)}>
@@ -268,14 +351,67 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
               </div>
             </CardHeader>
             <CardContent>
-              <APOVisualization 
-                data={categoryData}
-                chartType={chartType}
-                onChartTypeChange={setChartType}
-                className="mt-4"
-              />
+              {apoLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                  <p className="mt-2 text-gray-600">Calculating automation potential...</p>
+                </div>
+              ) : dynamicAPO ? (
+                <>
+                  <APOVisualization
+                    data={{
+                      categories: [
+                        { name: 'Tasks', value: dynamicAPO.categoryScores.tasks },
+                        { name: 'Knowledge', value: dynamicAPO.categoryScores.knowledge },
+                        { name: 'Skills', value: dynamicAPO.categoryScores.skills },
+                        { name: 'Abilities', value: dynamicAPO.categoryScores.abilities },
+                        { name: 'Technologies', value: dynamicAPO.categoryScores.technologies }
+                      ]
+                    }}
+                    chartType={chartType}
+                    onChartTypeChange={setChartType}
+                    className="mt-4"
+                  />
+
+                  {dynamicAPO.insights.length > 0 && (
+                    <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                      <h3 className="flex items-center text-lg font-medium mb-2">
+                        <Info className="h-5 w-5 mr-2 text-blue-500" />
+                        Insights
+                      </h3>
+                      <ul className="space-y-2">
+                        {dynamicAPO.insights.map((insight, index) => (
+                          <li key={index} className="text-sm text-slate-700">{insight}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <APOVisualization
+                  data={categoryData}
+                  chartType={chartType}
+                  onChartTypeChange={setChartType}
+                  className="mt-4"
+                />
+              )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="outlook" className="space-y-4">
+          {outlookLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+              <p className="mt-2 text-gray-600">Loading job outlook data...</p>
+            </div>
+          ) : (
+            <OutlookDisplay
+              jobOutlook={jobOutlook || undefined}
+              occupationTitle={occupation.title}
+              apoScore={dynamicAPO ? dynamicAPO.overallAPO : calculateOverallAPO(occupationWithAPOItems)}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="education" className="space-y-4">
@@ -367,11 +503,11 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
             ) : (
               <>
 
-                <EnhancedAPOAnalysis 
+                <EnhancedAPOAnalysis
                   automationFactor={getAutomationFactor(occupation)}
                 />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <HistoricalTrendChart 
+                  <HistoricalTrendChart
                     data={historicalData}
                     predictedTrend={prediction ? [{
                       date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
@@ -396,6 +532,10 @@ const OccupationDetails: React.FC<OccupationDetailsProps> = ({ occupation }) => 
 
         <TabsContent value="skills">
           <SkillsContainer occupationId={occupation.code} userId="user123" />
+        </TabsContent>
+
+        <TabsContent value="api-test">
+          <ApiTestPanel occupation={occupation.title} />
         </TabsContent>
       </Tabs>
     </div>
