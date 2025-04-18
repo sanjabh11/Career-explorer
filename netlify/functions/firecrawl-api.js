@@ -44,8 +44,8 @@ exports.handler = async function(event, context) {
       };
     }
 
-    // Make request to FireCrawl API (replace with actual endpoint)
-    const response = await axios.post('https://api.firecrawl.dev/search', {
+    // Version 1.3.1-firecrawl-endpoint-fix: Use correct Firecrawl endpoint per docs
+    const response = await axios.post('https://api.firecrawl.dev/v1/search', {
       query: query,
       limit: limit || 5
     }, {
@@ -120,3 +120,4 @@ function generateMockFireCrawlResults(query) {
     ]
   };
 }
+#test
