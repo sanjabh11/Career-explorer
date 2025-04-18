@@ -3,10 +3,13 @@ import { Box, Tab, Tabs, Typography, Paper } from '@mui/material';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import SchoolIcon from '@mui/icons-material/School';
 import TimelineIcon from '@mui/icons-material/Timeline';
+import AnalyticsIcon from '@mui/icons-material/Analytics';
+import CategoryIcon from '@mui/icons-material/Category';
 import SkillsAssessment from './SkillsAssessment';
 import TrainingRecommendations from './TrainingRecommendations';
 import SkillsProgress from './SkillsProgress';
 import SkillsTaxonomy from './SkillsTaxonomy';
+import DetailedSkillsAnalysis from './DetailedSkillsAnalysis';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -53,35 +56,42 @@ const SkillsContainer: React.FC<SkillsContainerProps> = ({
     <Paper elevation={0} sx={{ p: 2 }}>
       <Box sx={{ width: '100%' }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs 
-            value={activeTab} 
+          <Tabs
+            value={activeTab}
             onChange={handleTabChange}
             aria-label="skills management tabs"
-            variant="fullWidth"
+            variant="scrollable"
+            scrollButtons="auto"
           >
-            <Tab 
-              icon={<AssessmentIcon />} 
-              label="Skills Assessment" 
+            <Tab
+              icon={<AssessmentIcon />}
+              label="Skills Assessment"
               id="skills-tab-0"
               aria-controls="skills-tabpanel-0"
             />
-            <Tab 
-              icon={<SchoolIcon />} 
-              label="Training" 
+            <Tab
+              icon={<SchoolIcon />}
+              label="Training"
               id="skills-tab-1"
               aria-controls="skills-tabpanel-1"
             />
-            <Tab 
-              icon={<TimelineIcon />} 
-              label="Progress Tracking" 
+            <Tab
+              icon={<TimelineIcon />}
+              label="Progress Tracking"
               id="skills-tab-2"
               aria-controls="skills-tabpanel-2"
             />
-            <Tab 
-              icon={<TimelineIcon />} 
-              label="Skills Taxonomy" 
+            <Tab
+              icon={<CategoryIcon />}
+              label="Skills Taxonomy"
               id="skills-tab-3"
               aria-controls="skills-tabpanel-3"
+            />
+            <Tab
+              icon={<AnalyticsIcon />}
+              label="Detailed Analysis"
+              id="skills-tab-4"
+              aria-controls="skills-tabpanel-4"
             />
           </Tabs>
         </Box>
@@ -124,6 +134,18 @@ const SkillsContainer: React.FC<SkillsContainerProps> = ({
 
         <TabPanel value={activeTab} index={3}>
           <SkillsTaxonomy occupationId={occupationId} />
+        </TabPanel>
+
+        <TabPanel value={activeTab} index={4}>
+          <Box mb={3}>
+            <Typography variant="h6" gutterBottom>
+              Detailed Skills Analysis
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              Explore detailed information about skills, including automation impact, future relevance, and skill relationships.
+            </Typography>
+          </Box>
+          <DetailedSkillsAnalysis occupationId={occupationId} />
         </TabPanel>
       </Box>
     </Paper>
